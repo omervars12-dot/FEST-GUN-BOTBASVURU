@@ -34,14 +34,9 @@ const YETKILI_LOG_CHANNEL_ID = "1546240461822361710"; // Normal Yetkili Log Kana
 const ROL_1 = "1542872121833820322";                 // Etiketlenecek 1. Rol
 const ROL_2 = "1542872252045856879";                 // Etiketlenecek 2. Rol
 
-// İstediğin Görsel URL'si (Embed Banner olarak eklendi)
-const BANNER_IMAGE = "https://cdn.discordapp.com/attachments/1543803508795645992/..." // Eğer doğrudan ID ise Discord cdn link formatına çevrildi veya direkt görsel ID kullanıldı:
-const EMBED_IMAGE_URL = "https://media.discordapp.net/attachments/1543803508795645992/image.png"; // Sabit görsel desteği
-
 client.once('ready', async () => {
-  console.log(`✅ ${client.user.tag} Ultra Gelişmiş Başvuru Sistemi Aktif!`);
+  console.log(`✅ ${client.user.tag} Çift Yönlü (Ünlem + Slash) Sistem Aktif!`);
 
-  // İki Ayrı Slash Komutu (/ac-panel ve /yetkili-panel)
   const commands = [
     new SlashCommandBuilder()
       .setName('ac-panel')
@@ -54,17 +49,21 @@ client.once('ready', async () => {
   const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
 
   try {
-    await rest.put(
-      Routes.applicationCommands(client.user.id),
-      { body: commands },
-    );
-    console.log('✅ Ayrı ayrı Slash panelleri yüklendi!');
+    for (const guild of client.guilds.cache.values()) {
+      await rest.put(
+        Routes.applicationGuildCommands(client.user.id, guild.id),
+        { body: commands },
+      );
+    }
+    console.log('✅ Slash (/) komutları sunucuya anında yüklendi!');
   } catch (error) {
     console.error(error);
   }
 });
 
-// Slash Komut Yönetimi (Ayrı Paneller)
+// ==========================================
+// 1. YÖNTEM: SLASH (/) KOMUTLARI
+// ==========================================
 client.on('interactionCreate', async (interaction) => {
   if (interaction.isChatInputCommand()) {
     if (interaction.commandName === 'ac-panel') {
@@ -76,7 +75,7 @@ client.on('interactionCreate', async (interaction) => {
         .setColor('#1f85de')
         .setTitle('🛡️ FEST GUN | AntiCheat (AC) Başvuru Paneli')
         .setDescription('Sunucumuzun güvenlik duvarını güçlendirmek, hileleri tespit etmek ve profesyonel ekibimize katılmak için hemen alttaki butona basarak formu doldur!')
-        .setImage('https://cdn.discordapp.com/attachments/1543803508795645992/image.png') // İstediğin görsel
+        .setImage('https://cdn.discordapp.com/attachments/1543803508795645992/image.png')
         .setFooter({ text: 'FEST GUN AntiCheat Departmanı' })
         .setTimestamp();
 
@@ -100,7 +99,7 @@ client.on('interactionCreate', async (interaction) => {
         .setColor('#57f287')
         .setTitle('👑 FEST GUN | Normal Yetkili Başvuru Paneli')
         .setDescription('Sunucu içi düzeni sağlamak, aktifliği yönetmek ve ailemize katılmak için hemen alttaki butona basarak başvuru formunu doldur!')
-        .setImage('https://cdn.discordapp.com/attachments/1543803508795645992/image.png') // İstediğin görsel
+        .setImage('https://cdn.discordapp.com/attachments/1543803508795645992/image.png')
         .setFooter({ text: 'FEST GUN Yetkili Yönetimi' })
         .setTimestamp();
 
@@ -117,7 +116,9 @@ client.on('interactionCreate', async (interaction) => {
     }
   }
 
-  // Butona Basıldığında Modalları Açma
+  // ==========================================
+  // BUTON VE MODAL YÖNETİMİ
+  // ==========================================
   if (interaction.isButton()) {
     if (interaction.customId === 'apply_ac') {
       const modal = new ModalBuilder()
@@ -140,7 +141,7 @@ client.on('interactionCreate', async (interaction) => {
 
       const ekstra = new TextInputBuilder()
         .setCustomId('ac_ekstra')
-        .setLabel('Eklemek istediğiniz özel bir durum var mı?')
+        .setLabel('Eklemek istediğiniz özel durum var mı?')
         .setStyle(TextInputStyle.Paragraph)
         .setPlaceholder('Kendi scannerınız var mı, başka ne katabilirsiniz?')
         .setRequired(false);
@@ -189,21 +190,18 @@ client.on('interactionCreate', async (interaction) => {
     }
   } 
 
-  // Form Gönderildiğinde Çok Düzeyli Analiz ve Küfür/Argo Filtresi
+  // ==========================================
+  // FORM GÖNDERİMİ & KÜFÜR FİLTRESİ / ANALİZ
+  // ==========================================
   else if (interaction.isModalSubmit()) {
     
-    // Küfür / Argo Filtre Kelimeleri
     const kufurListesi = ['amk', 'aq', 'sik', 'orospu', 'oç', 'piç', 'anan', 'baban', 'mal', 'rak', 'mastürbasyon', '31', 'yarrak'];
     
-    // ==========================================
-    // ANTICHEAH ULTRA ANALİZ & LOG
-    // ==========================================
     if (interaction.customId === 'modal_ac') {
       const adYas = interaction.fields.getTextInputValue('ac_adyas');
       const deneyim = interaction.fields.getTextInputValue('ac_deneyim');
-      const ekstra = interaction.fields.getTextInputValue('ekstra') || "Belirtilmemiş";
+      const ekstra = interaction.fields.getTextInputValue('ac_ekstra') || "Belirtilmemiş";
 
-      // Küfür / Uygunsuz Kelime Kontrolü
       const tumMetin = (adYas + " " + deneyim + " " + ekstra).toLowerCase();
       const kufurVarMi = kufurListesi.some(kelime => tumMetin.includes(kelime));
 
@@ -242,16 +240,11 @@ client.on('interactionCreate', async (interaction) => {
 
       await interaction.reply({ content: '✅ AntiCheat başvurunuz başarıyla şifrelenerek yetkili ekibimize iletilmiştir!', ephemeral: true });
     } 
-
-    // ==========================================
-    // NORMAL YETKİLİ ULTRA ANALİZ & LOG
-    // ==========================================
     else if (interaction.customId === 'modal_staff') {
       const adYas = interaction.fields.getTextInputValue('staff_adyas');
       const gecmis = interaction.fields.getTextInputValue('staff_gecmis');
       const nedenSen = interaction.fields.getTextInputValue('staff_neden');
 
-      // Küfür / Uygunsuz Kelime Kontrolü
       const tumMetin = (adYas + " " + gecmis + " " + nedenSen).toLowerCase();
       const kufurVarMi = kufurListesi.some(kelime => tumMetin.includes(kelime));
 
@@ -261,7 +254,7 @@ client.on('interactionCreate', async (interaction) => {
 
       if (kufurVarMi) {
         puan = 10;
-        durum = "🚨 **ŞÜPHELİ / TICKETTA KÜFÜR TESPİT EDİLDİ!**";
+        durum = "🚨 **ŞÜPHELİ / KÜFÜR TESPİT EDİLDİ!**";
         analizNotlari = ["❌ **DİKKAT:** Aday başvurusunda küfürlü/argo ifadeler kullanmıştır! Şüpheli yetkili tarafından incelenmelidir."];
       } else if (gecmis.toLowerCase().includes('yok') || gecmis.length < 10) {
         puan = 65;
@@ -290,6 +283,59 @@ client.on('interactionCreate', async (interaction) => {
 
       await interaction.reply({ content: '✅ Normal yetkili başvurunuz başarıyla şifrelenerek yönetim ekibimize iletilmiştir!', ephemeral: true });
     }
+  }
+});
+
+// ==========================================
+// 2. YÖNTEM: ÜNLEMLİ MESAJ KOMUTLARI (!ac-panel / !yetkili-panel)
+// ==========================================
+client.on('messageCreate', async (message) => {
+  if (message.author.bot) return;
+
+  // Sadece Adminler Ünlemli Komutları Kullanabilir
+  if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) return;
+
+  if (message.content === '!ac-panel') {
+    await message.delete().catch(() => {});
+
+    const embed = new EmbedBuilder()
+      .setColor('#1f85de')
+      .setTitle('🛡️ FEST GUN | AntiCheat (AC) Başvuru Paneli')
+      .setDescription('Sunucumuzun güvenlik duvarını güçlendirmek, hileleri tespit etmek ve profesyonel ekibimize katılmak için hemen alttaki butona basarak formu doldur!')
+      .setImage('https://cdn.discordapp.com/attachments/1543803508795645992/image.png')
+      .setFooter({ text: 'FEST GUN AntiCheat Departmanı' })
+      .setTimestamp();
+
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('apply_ac')
+        .setLabel('AntiCheat Başvurusu Yap')
+        .setStyle(ButtonStyle.Primary)
+        .setEmoji('🛡️')
+    );
+
+    await message.channel.send({ embeds: [embed], components: [row] });
+  } 
+  else if (message.content === '!yetkili-panel') {
+    await message.delete().catch(() => {});
+
+    const embed = new EmbedBuilder()
+      .setColor('#57f287')
+      .setTitle('👑 FEST GUN | Normal Yetkili Başvuru Paneli')
+      .setDescription('Sunucu içi düzeni sağlamak, aktifliği yönetmek ve ailemize katılmak için hemen alttaki butona basarak başvuru formunu doldur!')
+      .setImage('https://cdn.discordapp.com/attachments/1543803508795645992/image.png')
+      .setFooter({ text: 'FEST GUN Yetkili Yönetimi' })
+      .setTimestamp();
+
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('apply_staff')
+        .setLabel('Normal Yetkili Başvurusu Yap')
+        .setStyle(ButtonStyle.Success)
+        .setEmoji('👑')
+    );
+
+    await message.channel.send({ embeds: [embed], components: [row] });
   }
 });
 
