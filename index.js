@@ -134,7 +134,7 @@ client.on('interactionCreate', async (interaction) => {
     }
   }
 
-  // BUTON TIKLAMALARI (Zaman aşımını önlemek için en hızlı şekilde modal fırlatılır)
+  // BUTON TIKLAMALARI
   if (interaction.isButton()) {
     if (interaction.customId === 'apply_ac') {
       if (basvuranlarAC.has(interaction.user.id)) {
@@ -143,7 +143,8 @@ client.on('interactionCreate', async (interaction) => {
 
       const modal = new ModalBuilder().setCustomId('modal_ac').setTitle('🛡️ AntiCheat Başvuru Formu');
       modal.addComponents(
-        new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('ac_adyas').setLabel('Adınız ve Yaşınız?').setStyle(TextInputStyle.Short).setRequired(true)),
+        new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('ac_ad').setLabel('Adınız?').setStyle(TextInputStyle.Short).setRequired(true)),
+        new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('ac_yas').setLabel('Yaşınız?').setStyle(TextInputStyle.Short).setRequired(true)),
         new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('ac_deneyim').setLabel('Hile tespiti / AC bilginiz?').setStyle(TextInputStyle.Paragraph).setRequired(true)),
         new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('ac_ekstra').setLabel('Eklemek istediğiniz?').setStyle(TextInputStyle.Paragraph).setRequired(false))
       );
@@ -158,8 +159,9 @@ client.on('interactionCreate', async (interaction) => {
 
       const modal = new ModalBuilder().setCustomId('modal_staff').setTitle('👑 Yetkili Başvuru Formu');
       modal.addComponents(
-        new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('staff_adyas').setLabel('Adınız ve Yaşınız?').setStyle(TextInputStyle.Short).setRequired(true)),
-        new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('staff_gecmis').setLabel('Geçmiş yetkililiklerin?').setStyle(TextInputStyle.Paragraph).setRequired(true)),
+        new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('staff_ad').setLabel('Adınız?').setStyle(TextInputStyle.Short).setRequired(true)),
+        new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('staff_yas').setLabel('Yaşınız? (En az 12)').setStyle(TextInputStyle.Short).setRequired(true)),
+        new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('staff_gecmis').setLabel('Önceden hiç yetkili oldunuz mu?').setStyle(TextInputStyle.Paragraph).setPlaceholder('Hangi sunucuda, hangi konumdaydınız?').setRequired(true)),
         new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('staff_neden').setLabel('Neden sizi seçmeliyiz?').setStyle(TextInputStyle.Paragraph).setRequired(true))
       );
 
@@ -167,7 +169,7 @@ client.on('interactionCreate', async (interaction) => {
     }
   } 
 
-  // FORM GÖNDERİMLERİ VE YAPAY ZEKA ANALİZİ
+  // FORM GÖNDERİMLERİ VE ANALİZ
   if (interaction.isModalSubmit()) {
     const kufurListesi = ['amk', 'aq', 'sik', 'orospu', 'oç', 'piç', 'anan', 'baban', 'mal', 'rak', '31', 'yarrak'];
     const hileTehditListesi = ['hile', 'cheat', 'hack', 'ban', 'test etmek', 'denemek için', 'by pass', 'bypass', 'script'];
@@ -176,40 +178,39 @@ client.on('interactionCreate', async (interaction) => {
       if (basvuranlarAC.has(interaction.user.id)) return;
       basvuranlarAC.add(interaction.user.id);
 
-      const adYas = interaction.fields.getTextInputValue('ac_adyas');
+      const ad = interaction.fields.getTextInputValue('ac_ad');
+      const yasStr = interaction.fields.getTextInputValue('ac_yas');
+      const yas = parseInt(yasStr) || 0;
       const deneyim = interaction.fields.getTextInputValue('ac_deneyim');
       const ekstra = interaction.fields.getTextInputValue('ac_ekstra') || "Belirtilmemiş";
 
-      const tumMetin = (adYas + " " + deneyim + " " + ekstra).toLowerCase();
+      const tumMetin = (ad + " " + yasStr + " " + deneyim + " " + ekstra).toLowerCase();
       const kufurVarMi = kufurListesi.some(k => tumMetin.includes(k));
       const hileTehdidiVarMi = hileTehditListesi.some(k => tumMetin.includes(k));
 
       let puan = 75;
       let durum = "🟢 **Güçlü Aday / Mülakata Uygun**";
-      let analizNotlari = [];
 
-      if (hileTehdidiVarMi) {
+      if (yas < 12) {
         puan = 0;
-        durum = "🚨 **TEHDİT / HİLE İTİRAFI!**";
-        analizNotlari.push("`❌` Aday hile test edeceğini belirtti.");
-      }
-      if (kufurVarMi) {
+        durum = "🚨 **YAŞ KRİTERİNE UYMUYOR (En az 12 olmalı!)**";
+      } else if (hileTehdidiVarMi || kufurVarMi) {
         puan = 0;
-        durum = "🚨 **KÜFÜR TESPİT EDİLDİ!**";
-        analizNotlari.push("`❌` Küfür/argo bulundu.");
+        durum = "🚨 **ŞÜPHELİ / UYGUNSUZ İÇERİK!**";
       }
 
       const logChannel = interaction.guild.channels.cache.get(AC_LOG_CHANNEL_ID);
       if (logChannel) {
         const embed = new EmbedBuilder()
-          .setColor((kufurVarMi || hileTehdidiVarMi) ? '#FF0000' : '#1f85de')
+          .setColor(puan === 0 ? '#FF0000' : '#1f85de')
           .setTitle('🛡️ AntiCheat Başvuru Raporu')
           .addFields(
             { name: '👤 Başvuran', value: `${interaction.user.tag} (<@${interaction.user.id}>)` },
-            { name: '📝 Ad / Yaş', value: adYas, inline: true },
+            { name: '📝 Ad', value: ad, inline: true },
+            { name: '🎂 Yaş', value: yasStr, inline: true },
             { name: '⚙️ Deneyim', value: deneyim },
             { name: '💡 Ekstra', value: ekstra },
-            { name: '🤖 Yapay Zeka', value: `**Skor:** \`${puan}/100\`\n**Statü:** ${durum}` }
+            { name: '🤖 Değerlendirme', value: `**Skor:** \`${puan}/100\`\n**Statü:** ${durum}` }
           )
           .setTimestamp();
 
@@ -224,32 +225,38 @@ client.on('interactionCreate', async (interaction) => {
       if (basvuranlarStaff.has(interaction.user.id)) return;
       basvuranlarStaff.add(interaction.user.id);
 
-      const adYas = interaction.fields.getTextInputValue('staff_adyas');
+      const ad = interaction.fields.getTextInputValue('staff_ad');
+      const yasStr = interaction.fields.getTextInputValue('staff_yas');
+      const yas = parseInt(yasStr) || 0;
       const gecmis = interaction.fields.getTextInputValue('staff_gecmis');
       const nedenSen = interaction.fields.getTextInputValue('staff_neden');
 
-      const tumMetin = (adYas + " " + gecmis + " " + nedenSen).toLowerCase();
+      const tumMetin = (ad + " " + yasStr + " " + gecmis + " " + nedenSen).toLowerCase();
       const kufurVarMi = kufurListesi.some(k => tumMetin.includes(k));
 
       let puan = 75;
       let durum = "🟢 **Mükemmel Aday**";
 
-      if (kufurVarMi) {
+      if (yas < 12) {
+        puan = 0;
+        durum = "🚨 **YAŞ KRİTERİNE UYMUYOR (En az 12 olmalı!)**";
+      } else if (kufurVarMi) {
         puan = 10;
-        durum = "🚨 **KÜFÜR TESPİT EDİLDİ!**";
+        durum = "🚨 **KÜFÜR / UYGUNSUZ İFADE TESPİT EDİLDİ!**";
       }
 
       const logChannel = interaction.guild.channels.cache.get(YETKILI_LOG_CHANNEL_ID);
       if (logChannel) {
         const embed = new EmbedBuilder()
-          .setColor(kufurVarMi ? '#FF0000' : '#57f287')
+          .setColor(puan === 0 ? '#FF0000' : '#57f287')
           .setTitle('👑 Yetkili Başvuru Raporu')
           .addFields(
             { name: '👤 Başvuran', value: `${interaction.user.tag} (<@${interaction.user.id}>)` },
-            { name: '📝 Ad / Yaş', value: adYas, inline: true },
-            { name: '📋 Geçmiş', value: gecmis },
-            { name: '💬 Motivasyon', value: nedenSen },
-            { name: '🤖 Yapay Zeka', value: `**Skor:** \`${puan}/100\`\n**Statü:** ${durum}` }
+            { name: '📝 Ad', value: ad, inline: true },
+            { name: '🎂 Yaş', value: yasStr, inline: true },
+            { name: '📋 Geçmiş Yetkililikler', value: gecmis },
+            { name: '💬 Neden Seçmeliyiz?', value: nedenSen },
+            { name: '🤖 Değerlendirme', value: `**Skor:** \`${puan}/100\`\n**Statü:** ${durum}` }
           )
           .setTimestamp();
 
