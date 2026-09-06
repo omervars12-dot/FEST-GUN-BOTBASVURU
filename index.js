@@ -117,7 +117,7 @@ client.on('interactionCreate', async (interaction) => {
       }
 
       const embed = new EmbedBuilder()
-        .setColor('#2b2d31') // Şık Discord koyu tema rengi
+        .setColor('#2b2d31')
         .setTitle('🛡️ FEST GUN | AC Başvuru Paneli')
         .setDescription(
           '### Sunucu Güvenliğinde Yeni Bir Adım At!\n\n' +
@@ -150,7 +150,7 @@ client.on('interactionCreate', async (interaction) => {
         .setTitle('👑 FEST GUN | Normal Yetkili Başvuru Paneli')
         .setDescription(
           '### Ailemize Katıl ve Yönetimde Söz Sahibi Ol!\n\n' +
-          'Sunucu içi düzeni sağlamak, aktifliği yönetmek ve topluluğumuzu büyüütmek için yetkili ekibimizde yerini al. Hemen alttaki butona basarak başvuru formunu doldur!\n\n' +
+          'Sunucu içi düzeni sağlamak, aktifliği yönetmek ve topluluğumuzu büyütmek için yetkili ekibimizde yerini al. Hemen alttaki butona basarak başvuru formunu doldur!\n\n' +
           '> ⚠️ *Ekip kurallarına uyum sağlamak esastır.*'
         )
         .setFooter({ text: 'FEST GUN • Yetkili Yönetimi © Tüm Hakları Saklıdır.' })
@@ -246,11 +246,12 @@ client.on('interactionCreate', async (interaction) => {
   } 
 
   // ==========================================
-  // FORM GÖNDERİMİ & GELİŞMİŞ YAPAY ZEKA ANALİZİ (+ / -)
+  // FORM GÖNDERİMİ & GÜNCELLENMİŞ YAPAY ZEKA ANALİZİ
   // ==========================================
   else if (interaction.isModalSubmit()) {
     
     const kufurListesi = ['amk', 'aq', 'sik', 'orospu', 'oç', 'piç', 'anan', 'baban', 'mal', 'rak', 'mastürbasyon', '31', 'yarrak'];
+    const hileTehditListesi = ['hile', 'cheat', 'hack', 'ban', 'test etmek', 'denemek için', 'by pass', 'bypass', 'script'];
     
     if (interaction.customId === 'modal_ac') {
       const adYas = interaction.fields.getTextInputValue('ac_adyas');
@@ -259,37 +260,48 @@ client.on('interactionCreate', async (interaction) => {
 
       const tumMetin = (adYas + " " + deneyim + " " + ekstra).toLowerCase();
       const kufurVarMi = kufurListesi.some(kelime => tumMetin.includes(kelime));
+      const hileTehdidiVarMi = hileTehditListesi.some(kelime => tumMetin.includes(kelime));
 
       let puan = 75;
       let durum = "🟢 **Güçlü Aday / Mülakata Uygun**";
       let analizNotlari = [];
 
+      // Hile Tehdidi / Test Edeceğim Diyenleri Yakalama
+      if (hileTehdidiVarMi) {
+        puan = 0;
+        durum = "🚨 **TEHDİT / HİLE İTİRAFI VEYA TEST GİRİŞİ!**";
+        analizNotlari.push("`❌` **DİKKAT:** Aday hile açacağını, test edeceğini veya banlanıp banlanmayacağını belirtmiştir! Kesinlikle reddedilmeli/incelenmeli.");
+      } else {
+        analizNotlari.push("`+` Şüpheli hile söylemi tespit edilmedi.");
+      }
+
       // Küfür / Argo Kontrolü
       if (kufurVarMi) {
-        puan = 10;
+        puan = 0;
         durum = "🚨 **ŞÜPHELİ / KÜFÜR TESPİT EDİLDİ!**";
-        analizNotlari.push("`-` Form içeriğinde argo/küfür bulundu.");
-      } else {
+        analizNotlari.push("`❌` Form içeriğinde argo/küfür bulundu.");
+      } else if (!hileTehdidiVarMi) {
         analizNotlari.push("`+` Temiz ve seviyeli bir dil kullanılmış.");
       }
 
-      // Deneyim Detay Analizi
-      if (deneyim.length > 120) {
-        puan += 20;
-        analizNotlari.push("`+` Teknik hile tespiti ve scanner bilgisi oldukça detaylı.");
-      } else if (deneyim.length < 40) {
-        puan -= 15;
-        analizNotlari.push("`-` Teknik deneyim açıklaması zayıf ve kısa bırakılmış.");
-      } else {
-        analizNotlari.push("`+` Deneyim açıklaması orta düzeyde yeterli.");
-      }
+      // Deneyim Detay Analizi (Eğer hile tehdidi yoksa puanlamaya devam et)
+      if (!hileTehdidiVarMi && !kufurVarMi) {
+        if (deneyim.length > 120) {
+          puan += 20;
+          analizNotlari.push("`+` Teknik hile tespiti ve scanner bilgisi oldukça detaylı.");
+        } else if (deneyim.length < 40) {
+          puan -= 15;
+          analizNotlari.push("`-` Teknik deneyim açıklaması zayıf ve kısa bırakılmış.");
+        } else {
+          analizNotlari.push("`+` Deneyim açıklaması orta düzeyde yeterli.");
+        }
 
-      // Ekstra Durum Analizi
-      if (ekstra !== "Belirtilmemiş" && ekstra.length > 10) {
-        puan += 10;
-        analizNotlari.push("`+` Aday ekstra detaylar ekleyerek kendini öne çıkarmış.");
-      } else {
-        analizNotlari.push("`-` Ekstra bir özel bilgi paylaşılmamış.");
+        if (ekstra !== "Belirtilmemiş" && ekstra.length > 10) {
+          puan += 10;
+          analizNotlari.push("`+` Aday ekstra detaylar ekleyerek kendini öne çıkarmış.");
+        } else {
+          analizNotlari.push("`-` Ekstra bir özel bilgi paylaşılmamış.");
+        }
       }
 
       if (puan > 100) puan = 100;
@@ -298,7 +310,7 @@ client.on('interactionCreate', async (interaction) => {
       const logChannel = interaction.guild.channels.cache.get(AC_LOG_CHANNEL_ID);
       if (logChannel) {
         const embed = new EmbedBuilder()
-          .setColor(kufurVarMi ? '#FF0000' : '#1f85de')
+          .setColor((kufurVarMi || hileTehdidiVarMi) ? '#FF0000' : '#1f85de')
           .setTitle('🛡️ AntiCheat Başvuru Detaylı Analiz Raporu')
           .addFields(
             { name: '👤 Başvuran', value: `${interaction.user.tag} (<@${interaction.user.id}>)`, inline: false },
