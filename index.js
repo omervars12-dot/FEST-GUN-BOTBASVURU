@@ -248,21 +248,40 @@ client.on('interactionCreate', async (interaction) => {
       const tumMetin = (ad + " " + yasStr + " " + gecmis + " " + nedenSen);
       const kufurVarMi = kufurKontrol(tumMetin);
 
-      let puan = 75;
-      let durum = "🟢 **Mükemmel Aday**";
+      let puan = 70;
+      let durum = "🧑 **Genç Birey / Normal Aday**";
+      let embedColor = '#57f287';
 
-      if (yas < 12) {
+      // Ciddiyetsiz kısa kelime kontrolü ("keyfim", "sanane", "yok" gibi troller için)
+      const ciddiyetsizKelimeler = ['keyfim', 'sanane', 'ne', 'bilmiyom', 'yok', 'ene'];
+      const ciddiyetsizMi = ciddiyetsizKelimeler.some(k => nedenSen.toLowerCase().trim() === k || gecmis.toLowerCase().trim() === k);
+
+      if (yas < 10) {
         puan = 0;
-        durum = "🚨 **YAŞ KRİTERİNE UYMUYOR (En az 12 olmalı!)**";
-      } else if (kufurVarMi) {
-        puan = 10;
-        durum = "🚨 **KÜFÜR / HAKARET TESPİT EDİLDİ!**";
+        durum = "🚨 **YAŞ ÇOK KÜÇÜK (10 yaş altı)**";
+        embedColor = '#FF0000';
+      } else if (ciddiyetsizMi || kufurVarMi) {
+        puan = 20;
+        durum = "⚠️ **Ciddiyetsiz / Uygunsuz Başvuru**";
+        embedColor = '#FEE75C';
+      } else if (yas >= 10 && yas < 13) {
+        puan = 40;
+        durum = "👶 **Çocuk Birey / Gelişime Açık**";
+        embedColor = '#3498DB';
+      } else if (yas >= 13 && yas < 16) {
+        puan = 70;
+        durum = "🧑 **Genç Birey / Normal Aday**";
+        embedColor = '#57f287';
+      } else if (yas >= 16) {
+        puan = 90;
+        durum = "👨 **Yetişkin Birey / Deneyimli Aday**";
+        embedColor = '#2ECC71';
       }
 
       const logChannel = interaction.guild.channels.cache.get(YETKILI_LOG_CHANNEL_ID);
       if (logChannel) {
         const embed = new EmbedBuilder()
-          .setColor(puan === 0 ? '#FF0000' : '#57f287')
+          .setColor(embedColor)
           .setTitle('👑 Yetkili Başvuru Raporu')
           .addFields(
             { name: '👤 Başvuran', value: `${interaction.user.tag} (<@${interaction.user.id}>)` },
@@ -275,7 +294,6 @@ client.on('interactionCreate', async (interaction) => {
           .setTimestamp();
 
         if (TARGET_IMAGE) embed.setImage(TARGET_IMAGE);
-        // Sadece ROL_2 etiketleniyor
         await logChannel.send({ content: `<@&${ROL_2}> Yeni Yetkili başvurusu var!`, embeds: [embed] });
       }
 
