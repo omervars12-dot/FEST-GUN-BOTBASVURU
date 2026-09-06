@@ -47,6 +47,19 @@ const TARGET_IMAGE = "https://cdn.discordapp.com/attachments/1542872935809814688
 const basvuranlarAC = new Set();
 const basvuranlarStaff = new Set();
 
+// Gerçek ve Net Küfür/Hakaret Listesi (Kelime bazlı kontrol edilir, rasgele 31 veya harf kombinasyonlarına takılmaz)
+const kufurListesi = [
+  'amk', 'aq', 'amina', 'amina koyim', 'amk', 'aq', 'orospu', 'oç', 'piç', 
+  'anan', 'baban', 'sik', 'sikerim', 'sikik', 'yarrak', 'amcik', 'göt', 
+  'götveren', 'kahpe', 'puşt', 'ibne', 'mal', 'salak', 'gerizekalı', 'aptal', 
+  'enayi', 'angut', 'am ko', 'siktimin'
+];
+
+function kufurKontrol(metin) {
+  const kelimeler = metin.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"").split(/\s+/);
+  return kelimeler.some(kelime => kufurListesi.includes(kelime));
+}
+
 async function connectToVoice(guild) {
   const channel = guild.channels.cache.get(TARGET_VOICE_CHANNEL_ID);
   if (!channel) return;
@@ -121,7 +134,7 @@ client.on('interactionCreate', async (interaction) => {
       const embed = new EmbedBuilder()
         .setColor('#2b2d31')
         .setTitle('👑 FEST GUN | Yetkili Başvuru Paneli')
-        .setDescription('### Ailemize Katıl ve Yönetimde Söz Sahibi Ol!\n\nSunucu içi düzeni sağlamak için hemen alttaki butona basarak başvuru formunu doldur!');
+        .setDescription('### Ailemize Katıl ve Yönetimde Söz Sahibi Ol!\n\nSunucu içi düzeni sağlamak için hemen alttaki basarak başvuru formunu doldur!');
 
       if (TARGET_IMAGE) embed.setImage(TARGET_IMAGE);
 
@@ -144,9 +157,9 @@ client.on('interactionCreate', async (interaction) => {
       const modal = new ModalBuilder().setCustomId('modal_ac').setTitle('🛡️ AntiCheat Başvuru Formu');
       modal.addComponents(
         new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('ac_ad').setLabel('Adınız?').setStyle(TextInputStyle.Short).setRequired(true)),
-        new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('ac_yas').setLabel('Yaşınız?').setStyle(TextInputStyle.Short).setRequired(true)),
+        new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('ac_yas').setLabel('Yaşınız? (En az 12)').setStyle(TextInputStyle.Short).setRequired(true)),
         new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('ac_deneyim').setLabel('Hile tespiti / AC bilginiz?').setStyle(TextInputStyle.Paragraph).setRequired(true)),
-        new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('ac_ekstra').setLabel('Eklemek istediğiniz?').setStyle(TextInputStyle.Paragraph).setRequired(false))
+        new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('ac_ekstra').setLabel('Eklemek istediğiniz özel durum?').setStyle(TextInputStyle.Paragraph).setRequired(false))
       );
 
       return await interaction.showModal(modal);
@@ -171,7 +184,6 @@ client.on('interactionCreate', async (interaction) => {
 
   // FORM GÖNDERİMLERİ VE ANALİZ
   if (interaction.isModalSubmit()) {
-    const kufurListesi = ['amk', 'aq', 'sik', 'orospu', 'oç', 'piç', 'anan', 'baban', 'mal', 'rak', '31', 'yarrak'];
     const hileTehditListesi = ['hile', 'cheat', 'hack', 'ban', 'test etmek', 'denemek için', 'by pass', 'bypass', 'script'];
 
     if (interaction.customId === 'modal_ac') {
@@ -184,9 +196,9 @@ client.on('interactionCreate', async (interaction) => {
       const deneyim = interaction.fields.getTextInputValue('ac_deneyim');
       const ekstra = interaction.fields.getTextInputValue('ac_ekstra') || "Belirtilmemiş";
 
-      const tumMetin = (ad + " " + yasStr + " " + deneyim + " " + ekstra).toLowerCase();
-      const kufurVarMi = kufurListesi.some(k => tumMetin.includes(k));
-      const hileTehdidiVarMi = hileTehditListesi.some(k => tumMetin.includes(k));
+      const tumMetin = (ad + " " + yasStr + " " + deneyim + " " + ekstra);
+      const kufurVarMi = kufurKontrol(tumMetin);
+      const hileTehdidiVarMi = hileTehditListesi.some(k => tumMetin.toLowerCase().includes(k));
 
       let puan = 75;
       let durum = "🟢 **Güçlü Aday / Mülakata Uygun**";
@@ -194,9 +206,12 @@ client.on('interactionCreate', async (interaction) => {
       if (yas < 12) {
         puan = 0;
         durum = "🚨 **YAŞ KRİTERİNE UYMUYOR (En az 12 olmalı!)**";
-      } else if (hileTehdidiVarMi || kufurVarMi) {
+      } else if (hileTehdidiVarMi) {
         puan = 0;
-        durum = "🚨 **ŞÜPHELİ / UYGUNSUZ İÇERİK!**";
+        durum = "🚨 **TEHDİT / HİLE İTİRAFI!**";
+      } else if (kufurVarMi) {
+        puan = 0;
+        durum = "🚨 **KÜFÜR / HAKARET TESPİT EDİLDİ!**";
       }
 
       const logChannel = interaction.guild.channels.cache.get(AC_LOG_CHANNEL_ID);
@@ -231,8 +246,8 @@ client.on('interactionCreate', async (interaction) => {
       const gecmis = interaction.fields.getTextInputValue('staff_gecmis');
       const nedenSen = interaction.fields.getTextInputValue('staff_neden');
 
-      const tumMetin = (ad + " " + yasStr + " " + gecmis + " " + nedenSen).toLowerCase();
-      const kufurVarMi = kufurListesi.some(k => tumMetin.includes(k));
+      const tumMetin = (ad + " " + yasStr + " " + gecmis + " " + nedenSen);
+      const kufurVarMi = kufurKontrol(tumMetin);
 
       let puan = 75;
       let durum = "🟢 **Mükemmel Aday**";
@@ -242,7 +257,7 @@ client.on('interactionCreate', async (interaction) => {
         durum = "🚨 **YAŞ KRİTERİNE UYMUYOR (En az 12 olmalı!)**";
       } else if (kufurVarMi) {
         puan = 10;
-        durum = "🚨 **KÜFÜR / UYGUNSUZ İFADE TESPİT EDİLDİ!**";
+        durum = "🚨 **KÜFÜR / HAKARET TESPİT EDİLDİ!**";
       }
 
       const logChannel = interaction.guild.channels.cache.get(YETKILI_LOG_CHANNEL_ID);
