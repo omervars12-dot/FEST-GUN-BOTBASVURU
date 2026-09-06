@@ -27,7 +27,7 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildVoiceStates // Ses kanallarını görebilmek için gerekli intent
+    GatewayIntentBits.GuildVoiceStates
   ],
   partials: [Partials.Channel, Partials.Message]
 });
@@ -42,7 +42,6 @@ const ROL_1 = "1542872121833820322";                 // Etiketlenecek 1. Rol
 const ROL_2 = "1542872252045856879";                 // Etiketlenecek 2. Rol
 
 const TARGET_VOICE_CHANNEL_ID = "1542872463870922814"; // 7/24 Duracağı Ses Kanalı ID'si
-const TARGET_IMAGE = "https://media.discordapp.net/attachments/1543803508795645992/image.png";
 
 // 7/24 Ses Kanalında Kalma Fonksiyonu
 async function connectToVoice(guild) {
@@ -56,8 +55,8 @@ async function connectToVoice(guild) {
       channelId: channel.id,
       guildId: guild.id,
       adapterCreator: guild.voiceAdapterCreator,
-      selfDeaf: true, // Sağırlaştırılmış şekilde girer
-      selfMute: true  // Susturulmuş şekilde girer
+      selfDeaf: true,
+      selfMute: true
     });
 
     connection.on(VoiceConnectionStatus.Disconnected, async () => {
@@ -67,7 +66,6 @@ async function connectToVoice(guild) {
           entersState(connection, VoiceConnectionStatus.Connecting, 5_000),
         ]);
       } catch (error) {
-        // Bağlantı tamamen koparsa otomatik tekrar bağlanır
         connection.destroy();
         setTimeout(() => connectToVoice(guild), 3000);
       }
@@ -80,7 +78,7 @@ async function connectToVoice(guild) {
 }
 
 client.once('ready', async () => {
-  console.log(`✅ ${client.user.tag} 7/24 Sistem Aktif!`);
+  console.log(`✅ ${client.user.tag} Sistem Aktif!`);
 
   const commands = [
     new SlashCommandBuilder()
@@ -99,8 +97,6 @@ client.once('ready', async () => {
         Routes.applicationGuildCommands(client.user.id, guild.id),
         { body: commands },
       );
-      
-      // Bot açıldığı an ses kanalına bağlan
       connectToVoice(guild);
     }
     console.log('✅ Slash (/) komutları yüklendi ve ses bağlantısı başlatıldı!');
@@ -123,7 +119,6 @@ client.on('interactionCreate', async (interaction) => {
         .setColor('#1f85de')
         .setTitle('🛡️ FEST GUN | AntiCheat (AC) Başvuru Paneli')
         .setDescription('Sunucumuzun güvenlik duvarını güçlendirmek, hileleri tespit etmek ve profesyonel ekibimize katılmak için hemen alttaki butona basarak formu doldur!')
-        .setImage(TARGET_IMAGE)
         .setFooter({ text: 'FEST GUN AntiCheat Departmanı' })
         .setTimestamp();
 
@@ -147,7 +142,6 @@ client.on('interactionCreate', async (interaction) => {
         .setColor('#57f287')
         .setTitle('👑 FEST GUN | Normal Yetkili Başvuru Paneli')
         .setDescription('Sunucu içi düzeni sağlamak, aktifliği yönetmek ve ailemize katılmak için hemen alttaki butona basarak başvuru formunu doldur!')
-        .setImage(TARGET_IMAGE)
         .setFooter({ text: 'FEST GUN Yetkili Yönetimi' })
         .setTimestamp();
 
@@ -271,7 +265,6 @@ client.on('interactionCreate', async (interaction) => {
         const embed = new EmbedBuilder()
           .setColor(kufurVarMi ? '#FF0000' : '#1f85de')
           .setTitle('🛡️ AntiCheat Başvuru Detaylı Analiz Raporu')
-          .setImage(TARGET_IMAGE)
           .addFields(
             { name: '👤 Başvuran', value: `${interaction.user.tag} (<@${interaction.user.id}>)`, inline: false },
             { name: '📝 Ad / Yaş', value: adYas, inline: true },
@@ -314,7 +307,6 @@ client.on('interactionCreate', async (interaction) => {
         const embed = new EmbedBuilder()
           .setColor(kufurVarMi ? '#FF0000' : '#57f287')
           .setTitle('👑 Normal Yetkili Başvuru Detaylı Analiz Raporu')
-          .setImage(TARGET_IMAGE)
           .addFields(
             { name: '👤 Başvuran', value: `${interaction.user.tag} (<@${interaction.user.id}>)`, inline: false },
             { name: '📝 Ad / Yaş', value: adYas, inline: true },
@@ -348,7 +340,6 @@ client.on('messageCreate', async (message) => {
       .setColor('#1f85de')
       .setTitle('🛡️ FEST GUN | AntiCheat (AC) Başvuru Paneli')
       .setDescription('Sunucumuzun güvenlik duvarını güçlendirmek, hileleri tespit etmek ve profesyonel ekibimize katılmak için hemen alttaki butona basarak formu doldur!')
-      .setImage(TARGET_IMAGE)
       .setFooter({ text: 'FEST GUN AntiCheat Departmanı' })
       .setTimestamp();
 
@@ -369,7 +360,6 @@ client.on('messageCreate', async (message) => {
       .setColor('#57f287')
       .setTitle('👑 FEST GUN | Normal Yetkili Başvuru Paneli')
       .setDescription('Sunucu içi düzeni sağlamak, aktifliği yönetmek ve ailemize katılmak için hemen alttaki başvuru formunu doldur!')
-      .setImage(TARGET_IMAGE)
       .setFooter({ text: 'FEST GUN Yetkili Yönetimi' })
       .setTimestamp();
 
