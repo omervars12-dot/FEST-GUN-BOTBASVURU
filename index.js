@@ -38,8 +38,8 @@ const client = new Client({
 const AC_LOG_CHANNEL_ID = "1546239467033989210";       // AC Başvuru Log Kanalı
 const YETKILI_LOG_CHANNEL_ID = "1546240461822361710"; // Yetkili Log Kanalı
 
-const ROL_1 = "1542872121833820322";                 // Etiketlenecek 1. Rol
-const ROL_2 = "1542872252045856879";                 // Etiketlenecek 2. Rol
+const ROL_1 = "1542872121833820322";                 // AC için Etiketlenecek 1. Rol
+const ROL_2 = "1542872252045856879";                 // Yetkili için Etiketlenecek Rol
 
 const TARGET_VOICE_CHANNEL_ID = "1542872463870922814"; // 7/24 Duracağı Ses Kanalı ID'si
 const TARGET_IMAGE = "https://cdn.discordapp.com/attachments/1542872935809814688/1543803508547915786/ChatGPT_Image_31_Agu_2026_05_01_30.png?ex=6a9ec44e&is=6a9d72ce&hm=1a1a3cd5515ea1d43d8d89a44c16ff71702398ef3da14e341032e7c8144ecc37&"; 
@@ -275,7 +275,8 @@ client.on('interactionCreate', async (interaction) => {
           .setTimestamp();
 
         if (TARGET_IMAGE) embed.setImage(TARGET_IMAGE);
-        await logChannel.send({ content: `<@&${ROL_1}> <@&${ROL_2}> Yeni Yetkili başvurusu var!`, embeds: [embed] });
+        // Sadece ROL_2 etiketleniyor
+        await logChannel.send({ content: `<@&${ROL_2}> Yeni Yetkili başvurusu var!`, embeds: [embed] });
       }
 
       return await interaction.reply({ content: '✅ Yetkili başvurunuz iletildi!', ephemeral: true });
