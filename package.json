@@ -1,7 +1,6 @@
 {
   "name": "fest-gun-bot",
   "version": "1.0.0",
-  "description": "",
   "main": "index.js",
   "dependencies": {
     "@discordjs/voice": "^0.17.0",
