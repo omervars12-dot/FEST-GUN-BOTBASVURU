@@ -16,11 +16,18 @@ const {
   PermissionFlagsBits 
 } = require('discord.js');
 
+const { 
+  joinVoiceChannel, 
+  VoiceConnectionStatus, 
+  entersState 
+} = require('@discordjs/voice');
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildVoiceStates // Ses kanallarını görebilmek için gerekli intent
   ],
   partials: [Partials.Channel, Partials.Message]
 });
@@ -34,8 +41,46 @@ const YETKILI_LOG_CHANNEL_ID = "1546240461822361710"; // Normal Yetkili Log Kana
 const ROL_1 = "1542872121833820322";                 // Etiketlenecek 1. Rol
 const ROL_2 = "1542872252045856879";                 // Etiketlenecek 2. Rol
 
+const TARGET_VOICE_CHANNEL_ID = "1542872463870922814"; // 7/24 Duracağı Ses Kanalı ID'si
+const TARGET_IMAGE = "https://media.discordapp.net/attachments/1543803508795645992/image.png";
+
+// 7/24 Ses Kanalında Kalma Fonksiyonu
+async function connectToVoice(guild) {
+  const channel = guild.channels.cache.get(TARGET_VOICE_CHANNEL_ID);
+  if (!channel) {
+    return console.log(`❌ 7/24 Durulacak ses kanalı (${TARGET_VOICE_CHANNEL_ID}) bulunamadı!`);
+  }
+
+  try {
+    const connection = joinVoiceChannel({
+      channelId: channel.id,
+      guildId: guild.id,
+      adapterCreator: guild.voiceAdapterCreator,
+      selfDeaf: true, // Sağırlaştırılmış şekilde girer
+      selfMute: true  // Susturulmuş şekilde girer
+    });
+
+    connection.on(VoiceConnectionStatus.Disconnected, async () => {
+      try {
+        await Promise.race([
+          entersState(connection, VoiceConnectionStatus.Signalling, 5_000),
+          entersState(connection, VoiceConnectionStatus.Connecting, 5_000),
+        ]);
+      } catch (error) {
+        // Bağlantı tamamen koparsa otomatik tekrar bağlanır
+        connection.destroy();
+        setTimeout(() => connectToVoice(guild), 3000);
+      }
+    });
+
+    console.log(`🔊 Bot başarıyla ${channel.name} ses kanalına sabitlendi ve 7/24 aktif!`);
+  } catch (error) {
+    console.error('Ses kanalına bağlanırken hata oluştu:', error);
+  }
+}
+
 client.once('ready', async () => {
-  console.log(`✅ ${client.user.tag} Çift Yönlü (Ünlem + Slash) Sistem Aktif!`);
+  console.log(`✅ ${client.user.tag} 7/24 Sistem Aktif!`);
 
   const commands = [
     new SlashCommandBuilder()
@@ -54,8 +99,11 @@ client.once('ready', async () => {
         Routes.applicationGuildCommands(client.user.id, guild.id),
         { body: commands },
       );
+      
+      // Bot açıldığı an ses kanalına bağlan
+      connectToVoice(guild);
     }
-    console.log('✅ Slash (/) komutları sunucuya anında yüklendi!');
+    console.log('✅ Slash (/) komutları yüklendi ve ses bağlantısı başlatıldı!');
   } catch (error) {
     console.error(error);
   }
@@ -75,7 +123,7 @@ client.on('interactionCreate', async (interaction) => {
         .setColor('#1f85de')
         .setTitle('🛡️ FEST GUN | AntiCheat (AC) Başvuru Paneli')
         .setDescription('Sunucumuzun güvenlik duvarını güçlendirmek, hileleri tespit etmek ve profesyonel ekibimize katılmak için hemen alttaki butona basarak formu doldur!')
-        .setImage('https://cdn.discordapp.com/attachments/1543803508795645992/image.png')
+        .setImage(TARGET_IMAGE)
         .setFooter({ text: 'FEST GUN AntiCheat Departmanı' })
         .setTimestamp();
 
@@ -99,7 +147,7 @@ client.on('interactionCreate', async (interaction) => {
         .setColor('#57f287')
         .setTitle('👑 FEST GUN | Normal Yetkili Başvuru Paneli')
         .setDescription('Sunucu içi düzeni sağlamak, aktifliği yönetmek ve ailemize katılmak için hemen alttaki butona basarak başvuru formunu doldur!')
-        .setImage('https://cdn.discordapp.com/attachments/1543803508795645992/image.png')
+        .setImage(TARGET_IMAGE)
         .setFooter({ text: 'FEST GUN Yetkili Yönetimi' })
         .setTimestamp();
 
@@ -211,7 +259,7 @@ client.on('interactionCreate', async (interaction) => {
 
       if (kufurVarMi) {
         puan = 15;
-        durum = "🚨 **ŞÜPHELİ / KÜFÜR VEYA UYGUNSUZ İÇERİK TESPİT EDİLDİ!**";
+        durum = "🚨 **ŞÜPHELİ / KÜFÜR VEYA UYGUNSUZ İÇERİK!**";
         analizNotlari = ["❌ **DİKKAT:** Aday formda küfür veya argo kelime kullanmıştır! Şüpheli yetkili incelemelidir."];
       } else if (deneyim.length > 100) {
         puan = 98;
@@ -223,7 +271,7 @@ client.on('interactionCreate', async (interaction) => {
         const embed = new EmbedBuilder()
           .setColor(kufurVarMi ? '#FF0000' : '#1f85de')
           .setTitle('🛡️ AntiCheat Başvuru Detaylı Analiz Raporu')
-          .setImage('https://cdn.discordapp.com/attachments/1543803508795645992/image.png')
+          .setImage(TARGET_IMAGE)
           .addFields(
             { name: '👤 Başvuran', value: `${interaction.user.tag} (<@${interaction.user.id}>)`, inline: false },
             { name: '📝 Ad / Yaş', value: adYas, inline: true },
@@ -266,7 +314,7 @@ client.on('interactionCreate', async (interaction) => {
         const embed = new EmbedBuilder()
           .setColor(kufurVarMi ? '#FF0000' : '#57f287')
           .setTitle('👑 Normal Yetkili Başvuru Detaylı Analiz Raporu')
-          .setImage('https://cdn.discordapp.com/attachments/1543803508795645992/image.png')
+          .setImage(TARGET_IMAGE)
           .addFields(
             { name: '👤 Başvuran', value: `${interaction.user.tag} (<@${interaction.user.id}>)`, inline: false },
             { name: '📝 Ad / Yaş', value: adYas, inline: true },
@@ -291,8 +339,6 @@ client.on('interactionCreate', async (interaction) => {
 // ==========================================
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
-
-  // Sadece Adminler Ünlemli Komutları Kullanabilir
   if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) return;
 
   if (message.content === '!ac-panel') {
@@ -302,7 +348,7 @@ client.on('messageCreate', async (message) => {
       .setColor('#1f85de')
       .setTitle('🛡️ FEST GUN | AntiCheat (AC) Başvuru Paneli')
       .setDescription('Sunucumuzun güvenlik duvarını güçlendirmek, hileleri tespit etmek ve profesyonel ekibimize katılmak için hemen alttaki butona basarak formu doldur!')
-      .setImage('https://cdn.discordapp.com/attachments/1543803508795645992/image.png')
+      .setImage(TARGET_IMAGE)
       .setFooter({ text: 'FEST GUN AntiCheat Departmanı' })
       .setTimestamp();
 
@@ -322,8 +368,8 @@ client.on('messageCreate', async (message) => {
     const embed = new EmbedBuilder()
       .setColor('#57f287')
       .setTitle('👑 FEST GUN | Normal Yetkili Başvuru Paneli')
-      .setDescription('Sunucu içi düzeni sağlamak, aktifliği yönetmek ve ailemize katılmak için hemen alttaki butona basarak başvuru formunu doldur!')
-      .setImage('https://cdn.discordapp.com/attachments/1543803508795645992/image.png')
+      .setDescription('Sunucu içi düzeni sağlamak, aktifliği yönetmek ve ailemize katılmak için hemen alttaki başvuru formunu doldur!')
+      .setImage(TARGET_IMAGE)
       .setFooter({ text: 'FEST GUN Yetkili Yönetimi' })
       .setTimestamp();
 
