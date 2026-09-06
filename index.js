@@ -10,6 +10,9 @@ const {
   ModalBuilder, 
   TextInputBuilder, 
   TextInputStyle, 
+  REST, 
+  Routes, 
+  SlashCommandBuilder,
   PermissionFlagsBits 
 } = require('discord.js');
 
@@ -25,17 +28,73 @@ const client = new Client({
 // ======================
 // AYARLAR VE KANAL/ROL ID'LERİ
 // ======================
-const AC_LOG_CHANNEL_ID = "1546239467033989210"; // AC Başvuru Log Kanalı
+const AC_LOG_CHANNEL_ID = "1546239467033989210";       // AC Başvuru Log Kanalı
 const YETKILI_LOG_CHANNEL_ID = "1546240461822361710"; // Normal Yetkili Log Kanalı
 
-const ROL_1 = "1542872121833820322";          // Etiketlenecek 1. Rol
-const ROL_2 = "1542872252045856879";          // Etiketlenecek 2. Rol
+const ROL_1 = "1542872121833820322";                 // Etiketlenecek 1. Rol
+const ROL_2 = "1542872252045856879";                 // Etiketlenecek 2. Rol
 
-client.once('ready', () => {
-  console.log(`✅ ${client.user.tag} pozitif destekli başvuru botu aktif!`);
+client.once('ready', async () => {
+  console.log(`✅ ${client.user.tag} slash komutlu başvuru botu aktif!`);
+
+  // Slash Komutlarını Discord'a Otomatik Kaydetme
+  const commands = [
+    new SlashCommandBuilder()
+      .setName('basvuru')
+      .setDescription('Sunucu başvuru panelini açar.')
+  ].map(command => command.toJSON());
+
+  const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
+
+  try {
+    console.log('🔄 Slash (/) komutları yükleniyor...');
+    await rest.put(
+      Routes.applicationCommands(client.user.id),
+      { body: commands },
+    );
+    console.log('✅ Slash (/) komutları başarıyla yüklendi!');
+  } catch (error) {
+    console.error(error);
+  }
 });
 
-// Başvuru Panelini Kurma Komutu (!basvuru-panel)
+// 1. YÖNTEM: /basvuru Komutu
+client.on('interactionCreate', async (interaction) => {
+  if (interaction.isChatInputCommand()) {
+    if (interaction.commandName === 'basvuru') {
+      const embed = new EmbedBuilder()
+        .setColor('#3a86ff')
+        .setTitle('🌟 FEST GUN | Başvuru Sistemi')
+        .setDescription('Ekibimize katılarak bizimle birlikte büyümek ister misin?\n\nAşağıdaki kategorilerden kendine uygun olan başvuru türünü seçerek formu doldurabilirsin!')
+        .addFields(
+          { name: '🛡️ AntiCheat (AC) Başvurusu', value: 'Güvenlik süreçleri ve hile tespiti için ekibimize katıl.', inline: false },
+          { name: '👑 Normal Yetkili Başvurusu', value: 'Sunucu içi düzeni sağlamak ve aktifliği yönetmek için başvur.', inline: false }
+        )
+        .setFooter({ text: 'FEST GUN Başvuru Sistemi' })
+        .setTimestamp();
+
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId('apply_ac')
+          .setLabel('AntiCheat Başvurusu')
+          .setStyle(ButtonStyle.Primary)
+          .setEmoji('🛡️'),
+        new ButtonBuilder()
+          .setCustomId('apply_staff')
+          .setLabel('Normal Yetkili Başvurusu')
+          .setStyle(ButtonStyle.Success)
+          .setEmoji('👑')
+      );
+
+      await interaction.reply({ embeds: [embed], components: [row], ephemeral: false });
+    }
+  }
+
+  // 2. YÖNTEM: Eski usul !basvuru-panel komutu (Yedek olarak dursun)
+  if (interaction.isMessageComponent() === false && interaction.isChatInputCommand() === false) return;
+});
+
+// Eski !basvuru-panel komut desteği (istersen kullanabilirsin)
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
 
@@ -70,7 +129,7 @@ client.on('messageCreate', async (message) => {
   }
 });
 
-// Buton ve Modal Etkileşimleri
+// Buton ve Modal (Form) Etkileşimleri
 client.on('interactionCreate', async (interaction) => {
   if (interaction.isButton()) {
     if (interaction.customId === 'apply_ac') {
@@ -145,27 +204,16 @@ client.on('interactionCreate', async (interaction) => {
   else if (interaction.isModalSubmit()) {
     
     // ==========================================
-    // ANTICHEAH POZİTİF ANALİZ SİSTEMİ
+    // ANTICHEAT LOG GÖNDERİMİ (1546239467033989210)
     // ==========================================
     if (interaction.customId === 'modal_ac') {
       const adYas = interaction.fields.getTextInputValue('ac_adyas');
       const deneyim = interaction.fields.getTextInputValue('ac_deneyim');
       const gunlukSure = interaction.fields.getTextInputValue('ac_sure');
 
-      let puan = 70; // Taban puanı yüksek tutuldu ki asla düşük görünmesin
+      let puan = 80;
       let analizNotlari = ["✅ Aday ekibimize katılmak için istekli ve formunu tamamlamış."];
-
-      if (deneyim.length > 50) {
-        puan += 20;
-        analizNotlari.push("✅ Deneyim alanında güzel detaylar paylaşılmış.");
-      } else {
-        analizNotlari.push("💡 Adayın tecrübeleri mülakat aşamasında birebir konuşularak geliştirilebilir.");
-      }
-
-      if (puan > 100) puan = 100;
-
-      // Asla red vermeyen pozitif sonuç önerisi
-      let sonucOnerisi = "🟢 **Değerlendirmeye Uygun / Mülakata Davet Edilebilir**";
+      if (deneyim.length > 50) puan = 95;
 
       const logChannel = interaction.guild.channels.cache.get(AC_LOG_CHANNEL_ID);
       if (logChannel) {
@@ -177,7 +225,7 @@ client.on('interactionCreate', async (interaction) => {
             { name: '📝 Ad / Yaş', value: adYas, inline: true },
             { name: '⏳ Günlük Aktiflik', value: gunlukSure, inline: true },
             { name: '⚙️ Teknik Deneyim', value: deneyim, inline: false },
-            { name: '🤖 Analiz ve Değerlendirme Raporu', value: `**Aday Skoru:** \`${puan}/100\`\n**Genel Durum:** ${sonucOnerisi}\n\n**Analiz Notları:**\n${analizNotlari.join('\n')}`, inline: false }
+            { name: '🤖 Analiz ve Değerlendirme Raporu', value: `**Aday Skoru:** \`${puan}/100\`\n**Genel Durum:** 🟢 **Değerlendirmeye Uygun**\n\n**Analiz Notları:**\n${analizNotlari.join('\n')}`, inline: false }
           )
           .setTimestamp()
           .setFooter({ text: 'FEST GUN AC Sistemi' });
@@ -190,27 +238,15 @@ client.on('interactionCreate', async (interaction) => {
     } 
 
     // ==========================================
-    // NORMAL YETKİLİ POZİTİF ANALİZ SİSTEMİ
+    // NORMAL YETKİLİ LOG GÖNDERİMİ (1546240461822361710)
     // ==========================================
     else if (interaction.customId === 'modal_staff') {
       const adYas = interaction.fields.getTextInputValue('staff_adyas');
       const nedenSen = interaction.fields.getTextInputValue('staff_neden');
       const mikrofon = interaction.fields.getTextInputValue('staff_mikrofon');
 
-      let puan = 75;
+      let puan = 85;
       let analizNotlari = ["✅ Aday sunucumuzda aktif rol almak için başvuruda bulundu."];
-
-      if (nedenSen.length > 50) {
-        puan += 20;
-        analizNotlari.push("✅ Motivasyon metni gayet samimi ve olumlu.");
-      } else {
-        analizNotlari.push("💡 Kısa tutulan cevaplar sesli mülakatta detaylandırılabilir.");
-      }
-
-      if (puan > 100) puan = 100;
-
-      // Asla red vermeyen pozitif sonuç önerisi
-      let sonucOnerisi = "🟢 **Olumlu Değerlendirme / Sesli Görüşmeye Çağrılabilir**";
 
       const logChannel = interaction.guild.channels.cache.get(YETKILI_LOG_CHANNEL_ID);
       if (logChannel) {
@@ -222,7 +258,7 @@ client.on('interactionCreate', async (interaction) => {
             { name: '📝 Ad / Yaş', value: adYas, inline: true },
             { name: '🎙️ Mikrofon Durumu', value: mikrofon, inline: true },
             { name: '💬 Neden Biz?', value: nedenSen, inline: false },
-            { name: '🤖 Analiz ve Değerlendirme Raporu', value: `**Aday Skoru:** \`${puan}/100\`\n**Genel Durum:** ${sonucOnerisi}\n\n**Analiz Notları:**\n${analizNotlari.join('\n')}`, inline: false }
+            { name: '🤖 Analiz ve Değerlendirme Raporu', value: `**Aday Skoru:** \`${puan}/100\`\n**Genel Durum:** 🟢 **Olumlu Değerlendirme**\n\n**Analiz Notları:**\n${analizNotlari.join('\n')}`, inline: false }
           )
           .setTimestamp()
           .setFooter({ text: 'FEST GUN Yetkili Sistemi' });
