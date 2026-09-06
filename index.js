@@ -215,7 +215,7 @@ client.on('interactionCreate', async (interaction) => {
         new ActionRowBuilder().addComponents(ekstra)
       );
 
-      await interaction.showModal(modal);
+      return await interaction.showModal(modal);
     } 
     else if (interaction.customId === 'apply_staff') {
       if (basvuranlarStaff.has(interaction.user.id)) {
@@ -253,12 +253,12 @@ client.on('interactionCreate', async (interaction) => {
         new ActionRowBuilder().addComponents(nedenSen)
       );
 
-      await interaction.showModal(modal);
+      return await interaction.showModal(modal);
     }
   } 
 
   // ==========================================
-  // FORM GÖNDERİMİ & GÜNCELLENMİŞ YAPAY ZEKA ANALİZİ
+  // FORM GÖNDERİMİ & YAPAY ZEKA ANALİZİ
   // ==========================================
   else if (interaction.isModalSubmit()) {
     
@@ -342,7 +342,7 @@ client.on('interactionCreate', async (interaction) => {
         await logChannel.send({ content: `${etiketler} Yeni bir AntiCheat başvurusu var!`, embeds: [embed] });
       }
 
-      await interaction.reply({ content: '✅ AntiCheat başvurunuz başarıyla şifrelenerek yetkili ekibimize iletilmiştir!', ephemeral: true });
+      return await interaction.reply({ content: '✅ AntiCheat başvurunuz başarıyla şifrelenerek yetkili ekibimize iletilmiştir!', ephemeral: true });
     } 
     else if (interaction.customId === 'modal_staff') {
       if (basvuranlarStaff.has(interaction.user.id)) {
@@ -408,7 +408,7 @@ client.on('interactionCreate', async (interaction) => {
         await logChannel.send({ content: `${etiketler} Yeni bir Yetkili başvurusu var!`, embeds: [embed] });
       }
 
-      await interaction.reply({ content: '✅ Yetkili başvurunuz başarıyla şifrelenerek yönetim ekibimize iletilmiştir!', ephemeral: true });
+      return await interaction.reply({ content: '✅ Yetkili başvurunuz başarıyla şifrelenerek yönetim ekibimize iletilmiştir!', ephemeral: true });
     }
   }
 });
@@ -454,7 +454,7 @@ client.on('messageCreate', async (message) => {
       .setTitle('👑 FEST GUN | Yetkili Başvuru Paneli')
       .setDescription(
         '### Ailemize Katıl ve Yönetimde Söz Sahibi Ol!\n\n' +
-        'Sunucu içi düzeni sağlamak, aktifliği yönetmek ve topluluğumuzu büyütmek için yetkili ekibimizde yerini al. Hemen alttaki basarak başvuru formunu doldur!\n\n' +
+        'Sunucu içi düzeni sağlamak, aktifliği yönetmek ve topluluğumuzu büyütmek için yetkili ekibimizde yerini al. Hemen alttaki butona basarak başvuru formunu doldur!\n\n' +
         '> ⚠️ *Ekip kurallarına uyum sağlamak esastır.*'
       )
       .setFooter({ text: 'FEST GUN • Yetkili Yönetimi © Tüm Hakları Saklıdır.' })
