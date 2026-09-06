@@ -47,9 +47,8 @@ const TARGET_IMAGE = "https://cdn.discordapp.com/attachments/1542872935809814688
 const basvuranlarAC = new Set();
 const basvuranlarStaff = new Set();
 
-// Gerçek ve Net Küfür/Hakaret Listesi (Kelime bazlı kontrol edilir, rasgele 31 veya harf kombinasyonlarına takılmaz)
 const kufurListesi = [
-  'amk', 'aq', 'amina', 'amina koyim', 'amk', 'aq', 'orospu', 'oç', 'piç', 
+  'amk', 'aq', 'amina', 'amina koyim', 'orospu', 'oç', 'piç', 
   'anan', 'baban', 'sik', 'sikerim', 'sikik', 'yarrak', 'amcik', 'göt', 
   'götveren', 'kahpe', 'puşt', 'ibne', 'mal', 'salak', 'gerizekalı', 'aptal', 
   'enayi', 'angut', 'am ko', 'siktimin'
@@ -157,7 +156,7 @@ client.on('interactionCreate', async (interaction) => {
       const modal = new ModalBuilder().setCustomId('modal_ac').setTitle('🛡️ AntiCheat Başvuru Formu');
       modal.addComponents(
         new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('ac_ad').setLabel('Adınız?').setStyle(TextInputStyle.Short).setRequired(true)),
-        new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('ac_yas').setLabel('Yaşınız? (En az 12)').setStyle(TextInputStyle.Short).setRequired(true)),
+        new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('ac_yas').setLabel('Yaşınız?').setStyle(TextInputStyle.Short).setRequired(true)),
         new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('ac_deneyim').setLabel('Hile tespiti / AC bilginiz?').setStyle(TextInputStyle.Paragraph).setRequired(true)),
         new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('ac_ekstra').setLabel('Eklemek istediğiniz özel durum?').setStyle(TextInputStyle.Paragraph).setRequired(false))
       );
@@ -173,7 +172,7 @@ client.on('interactionCreate', async (interaction) => {
       const modal = new ModalBuilder().setCustomId('modal_staff').setTitle('👑 Yetkili Başvuru Formu');
       modal.addComponents(
         new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('staff_ad').setLabel('Adınız?').setStyle(TextInputStyle.Short).setRequired(true)),
-        new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('staff_yas').setLabel('Yaşınız? (En az 12)').setStyle(TextInputStyle.Short).setRequired(true)),
+        new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('staff_yas').setLabel('Yaşınız?').setStyle(TextInputStyle.Short).setRequired(true)),
         new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('staff_gecmis').setLabel('Önceden hiç yetkili oldunuz mu?').setStyle(TextInputStyle.Paragraph).setPlaceholder('Hangi sunucuda, hangi konumdaydınız?').setRequired(true)),
         new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('staff_neden').setLabel('Neden sizi seçmeliyiz?').setStyle(TextInputStyle.Paragraph).setRequired(true))
       );
