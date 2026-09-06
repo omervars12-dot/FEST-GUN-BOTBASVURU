@@ -36,7 +36,7 @@ const client = new Client({
 // AYARLAR VE KANAL/ROL ID'LERİ
 // ======================
 const AC_LOG_CHANNEL_ID = "1546239467033989210";       // AC Başvuru Log Kanalı
-const YETKILI_LOG_CHANNEL_ID = "1546240461822361710"; // Normal Yetkili Log Kanalı
+const YETKILI_LOG_CHANNEL_ID = "1546240461822361710"; // Yetkili Log Kanalı
 
 const ROL_1 = "1542872121833820322";                 // Etiketlenecek 1. Rol
 const ROL_2 = "1542872252045856879";                 // Etiketlenecek 2. Rol
@@ -44,7 +44,7 @@ const ROL_2 = "1542872252045856879";                 // Etiketlenecek 2. Rol
 const TARGET_VOICE_CHANNEL_ID = "1542872463870922814"; // 7/24 Duracağı Ses Kanalı ID'si
 const TARGET_IMAGE = "https://cdn.discordapp.com/attachments/1542872935809814688/1543803508547915786/ChatGPT_Image_31_Agu_2026_05_01_30.png?ex=6a9ec44e&is=6a9d72ce&hm=1a1a3cd5515ea1d43d8d89a44c16ff71702398ef3da14e341032e7c8144ecc37&"; 
 
-// Kullanıcıların başvuru durumlarını tutmak için hafıza setleri (Bellek tabanlı kontrol)
+// Kullanıcıların başvuru durumlarını tutmak için hafıza setleri
 const basvuranlarAC = new Set();
 const basvuranlarStaff = new Set();
 
@@ -91,7 +91,7 @@ client.once('ready', async () => {
       .setDescription('Sadece AntiCheat başvuru panelini kurar.'),
     new SlashCommandBuilder()
       .setName('yetkili-panel')
-      .setDescription('Sadece Normal Yetkili başvuru panelini kurar.')
+      .setDescription('Sadece Yetkili başvuru panelini kurar.')
   ].map(command => command.toJSON());
 
   const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
@@ -151,7 +151,7 @@ client.on('interactionCreate', async (interaction) => {
 
       const embed = new EmbedBuilder()
         .setColor('#2b2d31')
-        .setTitle('👑 FEST GUN | Normal Yetkili Başvuru Paneli')
+        .setTitle('👑 FEST GUN | Yetkili Başvuru Paneli')
         .setDescription(
           '### Ailemize Katıl ve Yönetimde Söz Sahibi Ol!\n\n' +
           'Sunucu içi düzeni sağlamak, aktifliği yönetmek ve topluluğumuzu büyütmek için yetkili ekibimizde yerini al. Hemen alttaki butona basarak başvuru formunu doldur!\n\n' +
@@ -165,12 +165,12 @@ client.on('interactionCreate', async (interaction) => {
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId('apply_staff')
-          .setLabel('Normal Yetkili Başvurusu Yap')
+          .setLabel('Yetkili Başvurusu Yap')
           .setStyle(ButtonStyle.Success)
           .setEmoji('👑')
       );
 
-      await interaction.reply({ content: '✅ Normal Yetkili paneli bu kanala başarıyla kuruldu!', ephemeral: true });
+      await interaction.reply({ content: '✅ Yetkili paneli bu kanala başarıyla kuruldu!', ephemeral: true });
       await interaction.channel.send({ embeds: [embed], components: [row] });
     }
   }
@@ -219,12 +219,12 @@ client.on('interactionCreate', async (interaction) => {
     } 
     else if (interaction.customId === 'apply_staff') {
       if (basvuranlarStaff.has(interaction.user.id)) {
-        return interaction.reply({ content: '❌ Normal Yetkililik için **daha önce zaten bir başvuru gönderdin!** Tekrar başvuru yapamazsın.', ephemeral: true });
+        return interaction.reply({ content: '❌ Yetkililik için **daha önce zaten bir başvuru gönderdin!** Tekrar başvuru yapamazsın.', ephemeral: true });
       }
 
       const modal = new ModalBuilder()
         .setCustomId('modal_staff')
-        .setTitle('👑 Normal Yetkili Başvuru Formu');
+        .setTitle('👑 Yetkili Başvuru Formu');
 
       const adYas = new TextInputBuilder()
         .setCustomId('staff_adyas')
@@ -266,7 +266,6 @@ client.on('interactionCreate', async (interaction) => {
     const hileTehditListesi = ['hile', 'cheat', 'hack', 'ban', 'test etmek', 'denemek için', 'by pass', 'bypass', 'script'];
     
     if (interaction.customId === 'modal_ac') {
-      // Çift kontrol (Modal açıldıktan sonra arada gönderdiyse diye)
       if (basvuranlarAC.has(interaction.user.id)) {
         return interaction.reply({ content: '❌ Zaten daha önce AntiCheat başvurusu yapmışsın!', ephemeral: true });
       }
@@ -347,7 +346,7 @@ client.on('interactionCreate', async (interaction) => {
     } 
     else if (interaction.customId === 'modal_staff') {
       if (basvuranlarStaff.has(interaction.user.id)) {
-        return interaction.reply({ content: '❌ Zaten daha önce Normal Yetkili başvurusu yapmışsın!', ephemeral: true });
+        return interaction.reply({ content: '❌ Zaten daha önce Yetkili başvurusu yapmışsın!', ephemeral: true });
       }
       basvuranlarStaff.add(interaction.user.id);
 
@@ -392,7 +391,7 @@ client.on('interactionCreate', async (interaction) => {
       if (logChannel) {
         const embed = new EmbedBuilder()
           .setColor(kufurVarMi ? '#FF0000' : '#57f287')
-          .setTitle('👑 Normal Yetkili Başvuru Detaylı Analiz Raporu')
+          .setTitle('👑 Yetkili Başvuru Detaylı Analiz Raporu')
           .addFields(
             { name: '👤 Başvuran', value: `${interaction.user.tag} (<@${interaction.user.id}>)`, inline: false },
             { name: '📝 Ad / Yaş', value: adYas, inline: true },
@@ -406,10 +405,10 @@ client.on('interactionCreate', async (interaction) => {
         if (TARGET_IMAGE) embed.setImage(TARGET_IMAGE);
 
         const etiketler = `<@&${ROL_1}> <@&${ROL_2}>`;
-        await logChannel.send({ content: `${etiketler} Yeni bir Normal Yetkili başvurusu var!`, embeds: [embed] });
+        await logChannel.send({ content: `${etiketler} Yeni bir Yetkili başvurusu var!`, embeds: [embed] });
       }
 
-      await interaction.reply({ content: '✅ Normal yetkili başvurunuz başarıyla şifrelenerek yönetim ekibimize iletilmiştir!', ephemeral: true });
+      await interaction.reply({ content: '✅ Yetkili başvurunuz başarıyla şifrelenerek yönetim ekibimize iletilmiştir!', ephemeral: true });
     }
   }
 });
@@ -452,10 +451,10 @@ client.on('messageCreate', async (message) => {
 
     const embed = new EmbedBuilder()
       .setColor('#2b2d31')
-      .setTitle('👑 FEST GUN | Normal Yetkili Başvuru Paneli')
+      .setTitle('👑 FEST GUN | Yetkili Başvuru Paneli')
       .setDescription(
         '### Ailemize Katıl ve Yönetimde Söz Sahibi Ol!\n\n' +
-        'Sunucu içi düzeni sağlamak, aktifliği yönetmek ve topluluğumuzu büyütmek için yetkili ekibimizde yerini al. Hemen alttaki butona basarak başvuru formunu doldur!\n\n' +
+        'Sunucu içi düzeni sağlamak, aktifliği yönetmek ve topluluğumuzu büyütmek için yetkili ekibimizde yerini al. Hemen alttaki basarak başvuru formunu doldur!\n\n' +
         '> ⚠️ *Ekip kurallarına uyum sağlamak esastır.*'
       )
       .setFooter({ text: 'FEST GUN • Yetkili Yönetimi © Tüm Hakları Saklıdır.' })
@@ -466,7 +465,7 @@ client.on('messageCreate', async (message) => {
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId('apply_staff')
-        .setLabel('Normal Yetkili Başvurusu Yap')
+        .setLabel('Yetkili Başvurusu Yap')
         .setStyle(ButtonStyle.Success)
         .setEmoji('👑')
     );
