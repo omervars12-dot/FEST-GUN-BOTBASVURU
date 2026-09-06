@@ -1,13 +1,11 @@
 {
-  "name": "festgun-basvuru",
+  "name": "fest-gun-bot",
   "version": "1.0.0",
-  "description": "Discord Basvuru Botu",
+  "description": "",
   "main": "index.js",
-  "scripts": {
-    "start": "node index.js"
-  },
   "dependencies": {
+    "@discordjs/voice": "^0.17.0",
     "discord.js": "^14.14.0",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.0"
   }
 }
