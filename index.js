@@ -43,6 +43,9 @@ const ROL_2 = "1542872252045856879";                 // Etiketlenecek 2. Rol
 
 const TARGET_VOICE_CHANNEL_ID = "1542872463870922814"; // 7/24 Duracağı Ses Kanalı ID'si
 
+// GÖNDERDİĞİN RESİM BAĞLANTISI BURAYA EKLENDİ:
+const TARGET_IMAGE = "https://cdn.discordapp.com/attachments/1542872935809814688/1543803508547915786/ChatGPT_Image_31_Agu_2026_05_01_30.png?ex=6a9ec44e&is=6a9d72ce&hm=1a1a3cd5515ea1d43d8d89a44c16ff71702398ef3da14e341032e7c8144ecc37&"; 
+
 // 7/24 Ses Kanalında Kalma Fonksiyonu
 async function connectToVoice(guild) {
   const channel = guild.channels.cache.get(TARGET_VOICE_CHANNEL_ID);
@@ -122,6 +125,8 @@ client.on('interactionCreate', async (interaction) => {
         .setFooter({ text: 'FEST GUN AntiCheat Departmanı' })
         .setTimestamp();
 
+      if (TARGET_IMAGE) embed.setImage(TARGET_IMAGE);
+
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId('apply_ac')
@@ -144,6 +149,8 @@ client.on('interactionCreate', async (interaction) => {
         .setDescription('Sunucu içi düzeni sağlamak, aktifliği yönetmek ve ailemize katılmak için hemen alttaki butona basarak başvuru formunu doldur!')
         .setFooter({ text: 'FEST GUN Yetkili Yönetimi' })
         .setTimestamp();
+
+      if (TARGET_IMAGE) embed.setImage(TARGET_IMAGE);
 
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
@@ -275,6 +282,8 @@ client.on('interactionCreate', async (interaction) => {
           .setTimestamp()
           .setFooter({ text: 'FEST GUN AC Güvenlik Sistemi' });
 
+        if (TARGET_IMAGE) embed.setImage(TARGET_IMAGE);
+
         const etiketler = `<@&${ROL_1}> <@&${ROL_2}>`;
         await logChannel.send({ content: `${etiketler} Yeni bir AntiCheat başvurusu var!`, embeds: [embed] });
       }
@@ -317,6 +326,8 @@ client.on('interactionCreate', async (interaction) => {
           .setTimestamp()
           .setFooter({ text: 'FEST GUN Yönetim Sistemi' });
 
+        if (TARGET_IMAGE) embed.setImage(TARGET_IMAGE);
+
         const etiketler = `<@&${ROL_1}> <@&${ROL_2}>`;
         await logChannel.send({ content: `${etiketler} Yeni bir Normal Yetkili başvurusu var!`, embeds: [embed] });
       }
@@ -343,6 +354,8 @@ client.on('messageCreate', async (message) => {
       .setFooter({ text: 'FEST GUN AntiCheat Departmanı' })
       .setTimestamp();
 
+    if (TARGET_IMAGE) embed.setImage(TARGET_IMAGE);
+
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId('apply_ac')
@@ -362,6 +375,8 @@ client.on('messageCreate', async (message) => {
       .setDescription('Sunucu içi düzeni sağlamak, aktifliği yönetmek ve ailemize katılmak için hemen alttaki başvuru formunu doldur!')
       .setFooter({ text: 'FEST GUN Yetkili Yönetimi' })
       .setTimestamp();
+
+    if (TARGET_IMAGE) embed.setImage(TARGET_IMAGE);
 
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
