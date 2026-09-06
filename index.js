@@ -47,6 +47,7 @@ const TARGET_IMAGE = "https://cdn.discordapp.com/attachments/1542872935809814688
 const basvuranlarAC = new Set();
 const basvuranlarStaff = new Set();
 
+// KÜFÜR VE TROLL FİLTRE LİSTELERİ
 const kufurListesi = [
   'amk', 'aq', 'amina', 'amina koyim', 'orospu', 'oç', 'piç', 
   'anan', 'baban', 'sik', 'sikerim', 'sikik', 'yarrak', 'amcik', 'göt', 
@@ -54,9 +55,101 @@ const kufurListesi = [
   'enayi', 'angut', 'am ko', 'siktimin'
 ];
 
+const trollKalipListesi = [
+  'keyfim', 'sanane', 'sana ne', 'ne', 'bilmiyom', 'yok', 'ene', 'canım sıkıldı', 
+  'seni ilgilendirmez', 'ne biliyim', 'bos', 'boş', 'ne alakası var', 
+  'qwe', 'asd', 'zaman geçirmek', 'öylesine', 'bilmem', 'farketmez',
+  'can sıkıntısı', 'eğlence', 'takılmaca', 'öylesine yazdım', 'bilmiyorum'
+];
+
+const hileTehditListesi = [
+  'hile', 'cheat', 'hack', 'ban', 'test etmek', 'denemek için', 
+  'by pass', 'bypass', 'script', 'inject', 'exe'
+];
+
 function kufurKontrol(metin) {
   const kelimeler = metin.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"").split(/\s+/);
   return kelimeler.some(kelime => kufurListesi.includes(kelime));
+}
+
+// 👑 GELİŞMİŞ YETKİLİ BAŞVURU ANALİZ MOTORU
+function yetkiliBasvuruAnaliz(ad, yasStr, gecmis, nedenSen) {
+  const yas = parseInt(yasStr) || 0;
+  const birlesikMetin = `${ad} ${yasStr} ${gecmis} ${nedenSen}`.toLowerCase();
+
+  // 1. KURAL: Küfür Kontrolü
+  if (kufurKontrol(birlesikMetin)) {
+    return {
+      puan: 0,
+      durum: "🚨 **KÜFÜR / HAKARET TESPİT EDİLDİ!**",
+      renk: "#FF0000"
+    };
+  }
+
+  // 2. KURAL: Yaş Kontrolü
+  if (yas < 10) {
+    return {
+      puan: 0,
+      durum: "🚨 **YAŞ ÇOK KÜÇÜK (10 Yaş Altı)**",
+      renk: "#FF0000"
+    };
+  }
+
+  // 3. KURAL: Troll & Ciddiyetsizlik Kontrolü
+  const trollVarMi = trollKalipListesi.some(kalip => birlesikMetin.includes(kalip));
+  const metinCokKisa = gecmis.trim().length < 5 || nedenSen.trim().length < 5;
+
+  if (trollVarMi || metinCokKisa) {
+    return {
+      puan: 10,
+      durum: "⚠️ **Ciddiyetsiz / Troll Başvuru**",
+      renk: "#FEE75C"
+    };
+  }
+
+  // 4. KURAL: Puan Hesaplama Algoritması
+  let toplamPuan = 0;
+
+  // Yaş Puanı (Max 35 Puan)
+  if (yas >= 10 && yas <= 12) toplamPuan += 10;
+  else if (yas >= 13 && yas <= 15) toplamPuan += 25;
+  else if (yas >= 16) toplamPuan += 35;
+
+  // "Neden Seçmeliyiz" Kalite Puanı (Max 35 Puan)
+  const nedenUzunluk = nedenSen.trim().length;
+  if (nedenUzunluk > 50) toplamPuan += 35;
+  else if (nedenUzunluk > 20) toplamPuan += 25;
+  else toplamPuan += 10;
+
+  // Geçmiş Yetkililik Kalite Puanı (Max 30 Puan)
+  const gecmisUzunluk = gecmis.trim().length;
+  if (gecmisUzunluk > 40) toplamPuan += 30;
+  else if (gecmisUzunluk > 15) toplamPuan += 20;
+  else toplamPuan += 10;
+
+  // Statü Belirleme
+  let durumText = "";
+  let renkHex = "#57f287";
+
+  if (toplamPuan >= 85) {
+    durumText = "👨 **Yetişkin Birey / Mükemmel Aday**";
+    renkHex = "#2ECC71";
+  } else if (toplamPuan >= 60) {
+    durumText = "🧑 **Genç Birey / Normal Aday**";
+    renkHex = "#57f287";
+  } else if (toplamPuan >= 35) {
+    durumText = "👶 **Çocuk Birey / Gelişime Açık**";
+    renkHex = "#3498DB";
+  } else {
+    durumText = "⚠️ **Zayıf Başvuru / Yetersiz İçerik**";
+    renkHex = "#E67E22";
+  }
+
+  return {
+    puan: toplamPuan,
+    durum: durumText,
+    renk: renkHex
+  };
 }
 
 async function connectToVoice(guild) {
@@ -183,8 +276,10 @@ client.on('interactionCreate', async (interaction) => {
 
   // FORM GÖNDERİMLERİ VE ANALİZ
   if (interaction.isModalSubmit()) {
-    const hileTehditListesi = ['hile', 'cheat', 'hack', 'ban', 'test etmek', 'denemek için', 'by pass', 'bypass', 'script'];
 
+    // ==========================================
+    // 🛡️ ANTICHEAT (AC) BAŞVURU DEĞERLENDİRMESİ
+    // ==========================================
     if (interaction.customId === 'modal_ac') {
       if (basvuranlarAC.has(interaction.user.id)) return;
       basvuranlarAC.add(interaction.user.id);
@@ -195,28 +290,45 @@ client.on('interactionCreate', async (interaction) => {
       const deneyim = interaction.fields.getTextInputValue('ac_deneyim');
       const ekstra = interaction.fields.getTextInputValue('ac_ekstra') || "Belirtilmemiş";
 
-      const tumMetin = (ad + " " + yasStr + " " + deneyim + " " + ekstra);
-      const kufurVarMi = kufurKontrol(tumMetin);
-      const hileTehdidiVarMi = hileTehditListesi.some(k => tumMetin.toLowerCase().includes(k));
+      const birlesikMetin = `${ad} ${yasStr} ${deneyim} ${ekstra}`;
+      const kufurVar = kufurKontrol(birlesikMetin);
+      const trollVar = trollKalipListesi.some(k => deneyim.toLowerCase().includes(k)) || deneyim.trim().length < 5;
+      const hileTehdidi = hileTehditListesi.some(k => birlesikMetin.toLowerCase().includes(k));
 
-      let puan = 75;
-      let durum = "🟢 **Güçlü Aday / Mülakata Uygun**";
+      let puan = 0;
+      let durum = "";
+      let embedColor = '#1f85de';
 
-      if (yas < 12) {
-        puan = 0;
-        durum = "🚨 **YAŞ KRİTERİNE UYMUYOR (En az 12 olmalı!)**";
-      } else if (hileTehdidiVarMi) {
-        puan = 0;
-        durum = "🚨 **TEHDİT / HİLE İTİRAFI!**";
-      } else if (kufurVarMi) {
+      if (kufurVar) {
         puan = 0;
         durum = "🚨 **KÜFÜR / HAKARET TESPİT EDİLDİ!**";
+        embedColor = '#FF0000';
+      } else if (hileTehdidi) {
+        puan = 0;
+        durum = "🚨 **GÜVENLİK TEHDİDİ / HİLE İTİRAFI!**";
+        embedColor = '#FF0000';
+      } else if (trollVar) {
+        puan = 10;
+        durum = "⚠️ **Ciddiyetsiz / Yetersiz AC Açıklaması**";
+        embedColor = '#FEE75C';
+      } else if (yas < 12) {
+        puan = 20;
+        durum = "🚨 **YAŞ YETERSİZ (En az 12 olmalı)**";
+        embedColor = '#E74C3C';
+      } else if (yas >= 12 && yas < 15) {
+        puan = 65;
+        durum = "🧑 **Orta Düzey AC Adayı**";
+        embedColor = '#3498DB';
+      } else if (yas >= 15) {
+        puan = (deneyim.trim().length > 25) ? 90 : 75;
+        durum = "🟢 **Güçlü Aday / Mülakata Uygun**";
+        embedColor = '#2ECC71';
       }
 
       const logChannel = interaction.guild.channels.cache.get(AC_LOG_CHANNEL_ID);
       if (logChannel) {
         const embed = new EmbedBuilder()
-          .setColor(puan === 0 ? '#FF0000' : '#1f85de')
+          .setColor(embedColor)
           .setTitle('🛡️ AntiCheat Başvuru Raporu')
           .addFields(
             { name: '👤 Başvuran', value: `${interaction.user.tag} (<@${interaction.user.id}>)` },
@@ -235,53 +347,25 @@ client.on('interactionCreate', async (interaction) => {
       return await interaction.reply({ content: '✅ AntiCheat başvurunuz iletildi!', ephemeral: true });
     } 
     
+    // ==========================================
+    // 👑 YETKİLİ BAŞVURU DEĞERLENDİRMESİ
+    // ==========================================
     else if (interaction.customId === 'modal_staff') {
       if (basvuranlarStaff.has(interaction.user.id)) return;
       basvuranlarStaff.add(interaction.user.id);
 
       const ad = interaction.fields.getTextInputValue('staff_ad');
       const yasStr = interaction.fields.getTextInputValue('staff_yas');
-      const yas = parseInt(yasStr) || 0;
       const gecmis = interaction.fields.getTextInputValue('staff_gecmis');
       const nedenSen = interaction.fields.getTextInputValue('staff_neden');
 
-      const tumMetin = (ad + " " + yasStr + " " + gecmis + " " + nedenSen);
-      const kufurVarMi = kufurKontrol(tumMetin);
-
-      let puan = 70;
-      let durum = "🧑 **Genç Birey / Normal Aday**";
-      let embedColor = '#57f287';
-
-      // Ciddiyetsiz kısa kelime kontrolü ("keyfim", "sanane", "yok" gibi troller için)
-      const ciddiyetsizKelimeler = ['keyfim', 'sanane', 'ne', 'bilmiyom', 'yok', 'ene'];
-      const ciddiyetsizMi = ciddiyetsizKelimeler.some(k => nedenSen.toLowerCase().trim() === k || gecmis.toLowerCase().trim() === k);
-
-      if (yas < 10) {
-        puan = 0;
-        durum = "🚨 **YAŞ ÇOK KÜÇÜK (10 yaş altı)**";
-        embedColor = '#FF0000';
-      } else if (ciddiyetsizMi || kufurVarMi) {
-        puan = 20;
-        durum = "⚠️ **Ciddiyetsiz / Uygunsuz Başvuru**";
-        embedColor = '#FEE75C';
-      } else if (yas >= 10 && yas < 13) {
-        puan = 40;
-        durum = "👶 **Çocuk Birey / Gelişime Açık**";
-        embedColor = '#3498DB';
-      } else if (yas >= 13 && yas < 16) {
-        puan = 70;
-        durum = "🧑 **Genç Birey / Normal Aday**";
-        embedColor = '#57f287';
-      } else if (yas >= 16) {
-        puan = 90;
-        durum = "👨 **Yetişkin Birey / Deneyimli Aday**";
-        embedColor = '#2ECC71';
-      }
+      // Akıllı Analiz Motoru
+      const analiz = yetkiliBasvuruAnaliz(ad, yasStr, gecmis, nedenSen);
 
       const logChannel = interaction.guild.channels.cache.get(YETKILI_LOG_CHANNEL_ID);
       if (logChannel) {
         const embed = new EmbedBuilder()
-          .setColor(embedColor)
+          .setColor(analiz.renk)
           .setTitle('👑 Yetkili Başvuru Raporu')
           .addFields(
             { name: '👤 Başvuran', value: `${interaction.user.tag} (<@${interaction.user.id}>)` },
@@ -289,7 +373,7 @@ client.on('interactionCreate', async (interaction) => {
             { name: '🎂 Yaş', value: yasStr, inline: true },
             { name: '📋 Geçmiş Yetkililikler', value: gecmis },
             { name: '💬 Neden Seçmeliyiz?', value: nedenSen },
-            { name: '🤖 Değerlendirme', value: `**Skor:** \`${puan}/100\`\n**Statü:** ${durum}` }
+            { name: '🤖 Değerlendirme', value: `**Skor:** \`${analiz.puan}/100\`\n**Statü:** ${analiz.durum}` }
           )
           .setTimestamp();
 
