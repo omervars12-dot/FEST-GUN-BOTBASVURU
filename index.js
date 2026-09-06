@@ -44,6 +44,10 @@ const ROL_2 = "1542872252045856879";                 // Etiketlenecek 2. Rol
 const TARGET_VOICE_CHANNEL_ID = "1542872463870922814"; // 7/24 Duracağı Ses Kanalı ID'si
 const TARGET_IMAGE = "https://cdn.discordapp.com/attachments/1542872935809814688/1543803508547915786/ChatGPT_Image_31_Agu_2026_05_01_30.png?ex=6a9ec44e&is=6a9d72ce&hm=1a1a3cd5515ea1d43d8d89a44c16ff71702398ef3da14e341032e7c8144ecc37&"; 
 
+// Kullanıcıların başvuru durumlarını tutmak için hafıza setleri (Bellek tabanlı kontrol)
+const basvuranlarAC = new Set();
+const basvuranlarStaff = new Set();
+
 // 7/24 Ses Kanalında Kalma Fonksiyonu
 async function connectToVoice(guild) {
   const channel = guild.channels.cache.get(TARGET_VOICE_CHANNEL_ID);
@@ -176,6 +180,10 @@ client.on('interactionCreate', async (interaction) => {
   // ==========================================
   if (interaction.isButton()) {
     if (interaction.customId === 'apply_ac') {
+      if (basvuranlarAC.has(interaction.user.id)) {
+        return interaction.reply({ content: '❌ AntiCheat departmanına **daha önce zaten bir başvuru gönderdin!** Yeni bir başvuru yapamazsın.', ephemeral: true });
+      }
+
       const modal = new ModalBuilder()
         .setCustomId('modal_ac')
         .setTitle('🛡️ AntiCheat Başvuru Formu');
@@ -210,6 +218,10 @@ client.on('interactionCreate', async (interaction) => {
       await interaction.showModal(modal);
     } 
     else if (interaction.customId === 'apply_staff') {
+      if (basvuranlarStaff.has(interaction.user.id)) {
+        return interaction.reply({ content: '❌ Normal Yetkililik için **daha önce zaten bir başvuru gönderdin!** Tekrar başvuru yapamazsın.', ephemeral: true });
+      }
+
       const modal = new ModalBuilder()
         .setCustomId('modal_staff')
         .setTitle('👑 Normal Yetkili Başvuru Formu');
@@ -254,6 +266,12 @@ client.on('interactionCreate', async (interaction) => {
     const hileTehditListesi = ['hile', 'cheat', 'hack', 'ban', 'test etmek', 'denemek için', 'by pass', 'bypass', 'script'];
     
     if (interaction.customId === 'modal_ac') {
+      // Çift kontrol (Modal açıldıktan sonra arada gönderdiyse diye)
+      if (basvuranlarAC.has(interaction.user.id)) {
+        return interaction.reply({ content: '❌ Zaten daha önce AntiCheat başvurusu yapmışsın!', ephemeral: true });
+      }
+      basvuranlarAC.add(interaction.user.id);
+
       const adYas = interaction.fields.getTextInputValue('ac_adyas');
       const deneyim = interaction.fields.getTextInputValue('ac_deneyim');
       const ekstra = interaction.fields.getTextInputValue('ac_ekstra') || "Belirtilmemiş";
@@ -266,7 +284,6 @@ client.on('interactionCreate', async (interaction) => {
       let durum = "🟢 **Güçlü Aday / Mülakata Uygun**";
       let analizNotlari = [];
 
-      // Hile Tehdidi / Test Edeceğim Diyenleri Yakalama
       if (hileTehdidiVarMi) {
         puan = 0;
         durum = "🚨 **TEHDİT / HİLE İTİRAFI VEYA TEST GİRİŞİ!**";
@@ -275,7 +292,6 @@ client.on('interactionCreate', async (interaction) => {
         analizNotlari.push("`+` Şüpheli hile söylemi tespit edilmedi.");
       }
 
-      // Küfür / Argo Kontrolü
       if (kufurVarMi) {
         puan = 0;
         durum = "🚨 **ŞÜPHELİ / KÜFÜR TESPİT EDİLDİ!**";
@@ -284,7 +300,6 @@ client.on('interactionCreate', async (interaction) => {
         analizNotlari.push("`+` Temiz ve seviyeli bir dil kullanılmış.");
       }
 
-      // Deneyim Detay Analizi (Eğer hile tehdidi yoksa puanlamaya devam et)
       if (!hileTehdidiVarMi && !kufurVarMi) {
         if (deneyim.length > 120) {
           puan += 20;
@@ -331,6 +346,11 @@ client.on('interactionCreate', async (interaction) => {
       await interaction.reply({ content: '✅ AntiCheat başvurunuz başarıyla şifrelenerek yetkili ekibimize iletilmiştir!', ephemeral: true });
     } 
     else if (interaction.customId === 'modal_staff') {
+      if (basvuranlarStaff.has(interaction.user.id)) {
+        return interaction.reply({ content: '❌ Zaten daha önce Normal Yetkili başvurusu yapmışsın!', ephemeral: true });
+      }
+      basvuranlarStaff.add(interaction.user.id);
+
       const adYas = interaction.fields.getTextInputValue('staff_adyas');
       const gecmis = interaction.fields.getTextInputValue('staff_gecmis');
       const nedenSen = interaction.fields.getTextInputValue('staff_neden');
