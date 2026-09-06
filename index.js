@@ -42,8 +42,6 @@ const ROL_1 = "1542872121833820322";                 // Etiketlenecek 1. Rol
 const ROL_2 = "1542872252045856879";                 // Etiketlenecek 2. Rol
 
 const TARGET_VOICE_CHANNEL_ID = "1542872463870922814"; // 7/24 Duracağı Ses Kanalı ID'si
-
-// GÖNDERDİĞİN RESİM BAĞLANTISI BURAYA EKLENDİ:
 const TARGET_IMAGE = "https://cdn.discordapp.com/attachments/1542872935809814688/1543803508547915786/ChatGPT_Image_31_Agu_2026_05_01_30.png?ex=6a9ec44e&is=6a9d72ce&hm=1a1a3cd5515ea1d43d8d89a44c16ff71702398ef3da14e341032e7c8144ecc37&"; 
 
 // 7/24 Ses Kanalında Kalma Fonksiyonu
@@ -119,10 +117,14 @@ client.on('interactionCreate', async (interaction) => {
       }
 
       const embed = new EmbedBuilder()
-        .setColor('#1f85de')
-        .setTitle('🛡️ FEST GUN | AntiCheat (AC) Başvuru Paneli')
-        .setDescription('Sunucumuzun güvenlik duvarını güçlendirmek, hileleri tespit etmek ve profesyonel ekibimize katılmak için hemen alttaki butona basarak formu doldur!')
-        .setFooter({ text: 'FEST GUN AntiCheat Departmanı' })
+        .setColor('#2b2d31') // Şık Discord koyu tema rengi
+        .setTitle('🛡️ FEST GUN | AC Başvuru Paneli')
+        .setDescription(
+          '### Sunucu Güvenliğinde Yeni Bir Adım At!\n\n' +
+          'Sunucumuzun güvenlik duvarını güçlendirmek, hileleri anında tespit etmek ve profesyonel AntiCheat ekibimizin bir parçası olmak istiyorsan hemen alttaki butona tıklayarak formu doldurabilirsin.\n\n' +
+          '> ⚠️ *Lütfen formda dürüst ve açıklayıcı olmaya özen gösterin.*'
+        )
+        .setFooter({ text: 'FEST GUN • AntiCheat Departmanı © Tüm Hakları Saklıdır.' })
         .setTimestamp();
 
       if (TARGET_IMAGE) embed.setImage(TARGET_IMAGE);
@@ -135,7 +137,7 @@ client.on('interactionCreate', async (interaction) => {
           .setEmoji('🛡️')
       );
 
-      await interaction.reply({ content: '✅ AntiCheat paneli bu kanala kuruldu!', ephemeral: true });
+      await interaction.reply({ content: '✅ AC Başvuru paneli bu kanala başarıyla kuruldu!', ephemeral: true });
       await interaction.channel.send({ embeds: [embed], components: [row] });
     } 
     else if (interaction.commandName === 'yetkili-panel') {
@@ -144,10 +146,14 @@ client.on('interactionCreate', async (interaction) => {
       }
 
       const embed = new EmbedBuilder()
-        .setColor('#57f287')
+        .setColor('#2b2d31')
         .setTitle('👑 FEST GUN | Normal Yetkili Başvuru Paneli')
-        .setDescription('Sunucu içi düzeni sağlamak, aktifliği yönetmek ve ailemize katılmak için hemen alttaki butona basarak başvuru formunu doldur!')
-        .setFooter({ text: 'FEST GUN Yetkili Yönetimi' })
+        .setDescription(
+          '### Ailemize Katıl ve Yönetimde Söz Sahibi Ol!\n\n' +
+          'Sunucu içi düzeni sağlamak, aktifliği yönetmek ve topluluğumuzu büyüütmek için yetkili ekibimizde yerini al. Hemen alttaki butona basarak başvuru formunu doldur!\n\n' +
+          '> ⚠️ *Ekip kurallarına uyum sağlamak esastır.*'
+        )
+        .setFooter({ text: 'FEST GUN • Yetkili Yönetimi © Tüm Hakları Saklıdır.' })
         .setTimestamp();
 
       if (TARGET_IMAGE) embed.setImage(TARGET_IMAGE);
@@ -160,7 +166,7 @@ client.on('interactionCreate', async (interaction) => {
           .setEmoji('👑')
       );
 
-      await interaction.reply({ content: '✅ Normal Yetkili paneli bu kanala kuruldu!', ephemeral: true });
+      await interaction.reply({ content: '✅ Normal Yetkili paneli bu kanala başarıyla kuruldu!', ephemeral: true });
       await interaction.channel.send({ embeds: [embed], components: [row] });
     }
   }
@@ -240,7 +246,7 @@ client.on('interactionCreate', async (interaction) => {
   } 
 
   // ==========================================
-  // FORM GÖNDERİMİ & KÜFÜR FİLTRESİ / ANALİZ
+  // FORM GÖNDERİMİ & GELİŞMİŞ YAPAY ZEKA ANALİZİ (+ / -)
   // ==========================================
   else if (interaction.isModalSubmit()) {
     
@@ -254,18 +260,40 @@ client.on('interactionCreate', async (interaction) => {
       const tumMetin = (adYas + " " + deneyim + " " + ekstra).toLowerCase();
       const kufurVarMi = kufurListesi.some(kelime => tumMetin.includes(kelime));
 
-      let puan = 85;
-      let durum = "🟢 **Ultra Profesyonel / Mülakata Hazır**";
-      let analizNotlari = ["✅ Aday AntiCheat pozisyonu için teknik kriterleri karşılıyor."];
+      let puan = 75;
+      let durum = "🟢 **Güçlü Aday / Mülakata Uygun**";
+      let analizNotlari = [];
 
+      // Küfür / Argo Kontrolü
       if (kufurVarMi) {
-        puan = 15;
-        durum = "🚨 **ŞÜPHELİ / KÜFÜR VEYA UYGUNSUZ İÇERİK!**";
-        analizNotlari = ["❌ **DİKKAT:** Aday formda küfür veya argo kelime kullanmıştır! Şüpheli yetkili incelemelidir."];
-      } else if (deneyim.length > 100) {
-        puan = 98;
-        analizNotlari.push("💎 Adayın scanner ve hile yakalama bilgisi çok üst düzey!");
+        puan = 10;
+        durum = "🚨 **ŞÜPHELİ / KÜFÜR TESPİT EDİLDİ!**";
+        analizNotlari.push("`-` Form içeriğinde argo/küfür bulundu.");
+      } else {
+        analizNotlari.push("`+` Temiz ve seviyeli bir dil kullanılmış.");
       }
+
+      // Deneyim Detay Analizi
+      if (deneyim.length > 120) {
+        puan += 20;
+        analizNotlari.push("`+` Teknik hile tespiti ve scanner bilgisi oldukça detaylı.");
+      } else if (deneyim.length < 40) {
+        puan -= 15;
+        analizNotlari.push("`-` Teknik deneyim açıklaması zayıf ve kısa bırakılmış.");
+      } else {
+        analizNotlari.push("`+` Deneyim açıklaması orta düzeyde yeterli.");
+      }
+
+      // Ekstra Durum Analizi
+      if (ekstra !== "Belirtilmemiş" && ekstra.length > 10) {
+        puan += 10;
+        analizNotlari.push("`+` Aday ekstra detaylar ekleyerek kendini öne çıkarmış.");
+      } else {
+        analizNotlari.push("`-` Ekstra bir özel bilgi paylaşılmamış.");
+      }
+
+      if (puan > 100) puan = 100;
+      if (puan < 0) puan = 0;
 
       const logChannel = interaction.guild.channels.cache.get(AC_LOG_CHANNEL_ID);
       if (logChannel) {
@@ -277,7 +305,7 @@ client.on('interactionCreate', async (interaction) => {
             { name: '📝 Ad / Yaş', value: adYas, inline: true },
             { name: '⚙️ Teknik Deneyim & Scanner', value: deneyim, inline: false },
             { name: '💡 Ekstra Detaylar', value: ekstra, inline: false },
-            { name: '🤖 Yapay Zeka Derin Analiz', value: `**Skor:** \`${puan}/100\`\n**Statü:** ${durum}\n\n**Analiz Notları:**\n${analizNotlari.join('\n')}`, inline: false }
+            { name: '🤖 Yapay Zeka Artı / Eksi Değerlendirmesi', value: `**Skor:** \`${puan}/100\`\n**Statü:** ${durum}\n\n**Kriter Analizleri:**\n${analizNotlari.join('\n')}`, inline: false }
           )
           .setTimestamp()
           .setFooter({ text: 'FEST GUN AC Güvenlik Sistemi' });
@@ -298,18 +326,35 @@ client.on('interactionCreate', async (interaction) => {
       const tumMetin = (adYas + " " + gecmis + " " + nedenSen).toLowerCase();
       const kufurVarMi = kufurListesi.some(kelime => tumMetin.includes(kelime));
 
-      let puan = 90;
+      let puan = 75;
       let durum = "🟢 **Mükemmel Aday / Görüşmeye Davet Edilmeli**";
-      let analizNotlari = ["✅ Aday daha önceki deneyimleriyle sunucuya katkı sağlayabilir."];
+      let analizNotlari = [];
 
       if (kufurVarMi) {
         puan = 10;
         durum = "🚨 **ŞÜPHELİ / KÜFÜR TESPİT EDİLDİ!**";
-        analizNotlari = ["❌ **DİKKAT:** Aday başvurusunda küfürlü/argo ifadeler kullanmıştır! Şüpheli yetkili tarafından incelenmelidir."];
-      } else if (gecmis.toLowerCase().includes('yok') || gecmis.length < 10) {
-        puan = 65;
-        analizNotlari.push("⚠️ Daha önceki yetkililik geçmişi zayıf ya da belirtilmemiş.");
+        analizNotlari.push("`-` Başvuru metninde küfür/argo ifadeler tespit edildi.");
+      } else {
+        analizNotlari.push("`+` Uygun ve temiz bir üslup kullanılmış.");
       }
+
+      if (gecmis.toLowerCase().includes('yok') || gecmis.length < 15) {
+        puan -= 20;
+        analizNotlari.push("`-` Önceki yetkililik geçmişi zayıf veya hiç belirtilmemiş.");
+      } else {
+        puan += 15;
+        analizNotlari.push("`+` Geçmiş yetkililik tecrübeleri bulunuyor.");
+      }
+
+      if (nedenSen.length > 60) {
+        puan += 10;
+        analizNotlari.push("`+` Motivasyon ve kendini tanıtma yazısı oldukça tatmin edici.");
+      } else {
+        analizNotlari.push("`-` Kendini tanıtma bölümü kısa tutulmuş.");
+      }
+
+      if (puan > 100) puan = 100;
+      if (puan < 0) puan = 0;
 
       const logChannel = interaction.guild.channels.cache.get(YETKILI_LOG_CHANNEL_ID);
       if (logChannel) {
@@ -321,7 +366,7 @@ client.on('interactionCreate', async (interaction) => {
             { name: '📝 Ad / Yaş', value: adYas, inline: true },
             { name: '📋 Geçmiş Yetkililikler', value: gecmis, inline: false },
             { name: '💬 Motivasyon / Kendini Tanıtma', value: nedenSen, inline: false },
-            { name: '🤖 Yapay Zeka Derin Analiz', value: `**Skor:** \`${puan}/100\`\n**Statü:** ${durum}\n\n**Analiz Notları:**\n${analizNotlari.join('\n')}`, inline: false }
+            { name: '🤖 Yapay Zeka Artı / Eksi Değerlendirmesi', value: `**Skor:** \`${puan}/100\`\n**Statü:** ${durum}\n\n**Kriter Analizleri:**\n${analizNotlari.join('\n')}`, inline: false }
           )
           .setTimestamp()
           .setFooter({ text: 'FEST GUN Yönetim Sistemi' });
@@ -348,10 +393,14 @@ client.on('messageCreate', async (message) => {
     await message.delete().catch(() => {});
 
     const embed = new EmbedBuilder()
-      .setColor('#1f85de')
-      .setTitle('🛡️ FEST GUN | AntiCheat (AC) Başvuru Paneli')
-      .setDescription('Sunucumuzun güvenlik duvarını güçlendirmek, hileleri tespit etmek ve profesyonel ekibimize katılmak için hemen alttaki butona basarak formu doldur!')
-      .setFooter({ text: 'FEST GUN AntiCheat Departmanı' })
+      .setColor('#2b2d31')
+      .setTitle('🛡️ FEST GUN | AC Başvuru Paneli')
+      .setDescription(
+        '### Sunucu Güvenliğinde Yeni Bir Adım At!\n\n' +
+        'Sunucumuzun güvenlik duvarını güçlendirmek, hileleri anında tespit etmek ve profesyonel AntiCheat ekibimizin bir parçası olmak istiyorsan hemen alttaki butona tıklayarak formu doldurabilirsin.\n\n' +
+        '> ⚠️ *Lütfen formda dürüst ve açıklayıcı olmaya özen gösterin.*'
+      )
+      .setFooter({ text: 'FEST GUN • AntiCheat Departmanı © Tüm Hakları Saklıdır.' })
       .setTimestamp();
 
     if (TARGET_IMAGE) embed.setImage(TARGET_IMAGE);
@@ -370,10 +419,14 @@ client.on('messageCreate', async (message) => {
     await message.delete().catch(() => {});
 
     const embed = new EmbedBuilder()
-      .setColor('#57f287')
+      .setColor('#2b2d31')
       .setTitle('👑 FEST GUN | Normal Yetkili Başvuru Paneli')
-      .setDescription('Sunucu içi düzeni sağlamak, aktifliği yönetmek ve ailemize katılmak için hemen alttaki başvuru formunu doldur!')
-      .setFooter({ text: 'FEST GUN Yetkili Yönetimi' })
+      .setDescription(
+        '### Ailemize Katıl ve Yönetimde Söz Sahibi Ol!\n\n' +
+        'Sunucu içi düzeni sağlamak, aktifliği yönetmek ve topluluğumuzu büyütmek için yetkili ekibimizde yerini al. Hemen alttaki butona basarak başvuru formunu doldur!\n\n' +
+        '> ⚠️ *Ekip kurallarına uyum sağlamak esastır.*'
+      )
+      .setFooter({ text: 'FEST GUN • Yetkili Yönetimi © Tüm Hakları Saklıdır.' })
       .setTimestamp();
 
     if (TARGET_IMAGE) embed.setImage(TARGET_IMAGE);
