@@ -35,9 +35,9 @@ const ROL_1 = "1542872121833820322";                 // Etiketlenecek 1. Rol
 const ROL_2 = "1542872252045856879";                 // Etiketlenecek 2. Rol
 
 client.once('ready', async () => {
-  console.log(`✅ ${client.user.tag} slash komutlu başvuru botu aktif!`);
+  console.log(`✅ ${client.user.tag} botu başarıyla aktif!`);
 
-  // Slash Komutlarını Discord'a Otomatik Kaydetme
+  // Slash Komutlarını Anlık Kaydetme
   const commands = [
     new SlashCommandBuilder()
       .setName('basvuru')
@@ -47,58 +47,53 @@ client.once('ready', async () => {
   const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
 
   try {
-    console.log('🔄 Slash (/) komutları yükleniyor...');
+    console.log('🔄 Slash (/) komutları yenileniyor...');
     await rest.put(
       Routes.applicationCommands(client.user.id),
       { body: commands },
     );
-    console.log('✅ Slash (/) komutları başarıyla yüklendi!');
+    console.log('✅ Slash (/) komutları Discord\'a başarıyla işlendi!');
   } catch (error) {
     console.error(error);
   }
 });
 
-// 1. YÖNTEM: /basvuru Komutu
+// 1. YÖNTEM: Slash (/) Komutu
 client.on('interactionCreate', async (interaction) => {
-  if (interaction.isChatInputCommand()) {
-    if (interaction.commandName === 'basvuru') {
-      const embed = new EmbedBuilder()
-        .setColor('#3a86ff')
-        .setTitle('🌟 FEST GUN | Başvuru Sistemi')
-        .setDescription('Ekibimize katılarak bizimle birlikte büyümek ister misin?\n\nAşağıdaki kategorilerden kendine uygun olan başvuru türünü seçerek formu doldurabilirsin!')
-        .addFields(
-          { name: '🛡️ AntiCheat (AC) Başvurusu', value: 'Güvenlik süreçleri ve hile tespiti için ekibimize katıl.', inline: false },
-          { name: '👑 Normal Yetkili Başvurusu', value: 'Sunucu içi düzeni sağlamak ve aktifliği yönetmek için başvur.', inline: false }
-        )
-        .setFooter({ text: 'FEST GUN Başvuru Sistemi' })
-        .setTimestamp();
+  if (interaction.isChatInputCommand() && interaction.commandName === 'basvuru') {
+    const embed = new EmbedBuilder()
+      .setColor('#3a86ff')
+      .setTitle('🌟 FEST GUN | Başvuru Sistemi')
+      .setDescription('Ekibimize katılarak bizimle birlikte büyümek ister misin?\n\nAşağıdaki kategorilerden kendine uygun olan başvuru türünü seçerek formu doldurabilirsin!')
+      .addFields(
+        { name: '🛡️ AntiCheat (AC) Başvurusu', value: 'Güvenlik süreçleri ve hile tespiti için ekibimize katıl.', inline: false },
+        { name: '👑 Normal Yetkili Başvurusu', value: 'Sunucu içi düzeni sağlamak ve aktifliği yönetmek için başvur.', inline: false }
+      )
+      .setFooter({ text: 'FEST GUN Başvuru Sistemi' })
+      .setTimestamp();
 
-      const row = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId('apply_ac')
-          .setLabel('AntiCheat Başvurusu')
-          .setStyle(ButtonStyle.Primary)
-          .setEmoji('🛡️'),
-        new ButtonBuilder()
-          .setCustomId('apply_staff')
-          .setLabel('Normal Yetkili Başvurusu')
-          .setStyle(ButtonStyle.Success)
-          .setEmoji('👑')
-      );
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('apply_ac')
+        .setLabel('AntiCheat Başvurusu')
+        .setStyle(ButtonStyle.Primary)
+        .setEmoji('🛡️'),
+      new ButtonBuilder()
+        .setCustomId('apply_staff')
+        .setLabel('Normal Yetkili Başvurusu')
+        .setStyle(ButtonStyle.Success)
+        .setEmoji('👑')
+    );
 
-      await interaction.reply({ embeds: [embed], components: [row], ephemeral: false });
-    }
+    await interaction.reply({ embeds: [embed], components: [row] });
   }
-
-  // 2. YÖNTEM: Eski usul !basvuru-panel komutu (Yedek olarak dursun)
-  if (interaction.isMessageComponent() === false && interaction.isChatInputCommand() === false) return;
 });
 
-// Eski !basvuru-panel komut desteği (istersen kullanabilirsin)
+// 2. YÖNTEM: Mesaj Komutu (!basvuru) - Anında Çalışır
 client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
 
-  if (message.content === '!basvuru-panel' && message.member.permissions.has(PermissionFlagsBits.Administrator)) {
+  if (message.content === '!basvuru') {
     await message.delete().catch(() => {});
 
     const embed = new EmbedBuilder()
@@ -204,16 +199,15 @@ client.on('interactionCreate', async (interaction) => {
   else if (interaction.isModalSubmit()) {
     
     // ==========================================
-    // ANTICHEAT LOG GÖNDERİMİ (1546239467033989210)
+    // ANTICHEAT LOG GÖNDERİMİ
     // ==========================================
     if (interaction.customId === 'modal_ac') {
       const adYas = interaction.fields.getTextInputValue('ac_adyas');
       const deneyim = interaction.fields.getTextInputValue('ac_deneyim');
       const gunlukSure = interaction.fields.getTextInputValue('ac_sure');
 
-      let puan = 80;
+      let puan = 85;
       let analizNotlari = ["✅ Aday ekibimize katılmak için istekli ve formunu tamamlamış."];
-      if (deneyim.length > 50) puan = 95;
 
       const logChannel = interaction.guild.channels.cache.get(AC_LOG_CHANNEL_ID);
       if (logChannel) {
@@ -238,14 +232,14 @@ client.on('interactionCreate', async (interaction) => {
     } 
 
     // ==========================================
-    // NORMAL YETKİLİ LOG GÖNDERİMİ (1546240461822361710)
+    // NORMAL YETKİLİ LOG GÖNDERİMİ
     // ==========================================
     else if (interaction.customId === 'modal_staff') {
       const adYas = interaction.fields.getTextInputValue('staff_adyas');
       const nedenSen = interaction.fields.getTextInputValue('staff_neden');
       const mikrofon = interaction.fields.getTextInputValue('staff_mikrofon');
 
-      let puan = 85;
+      let puan = 90;
       let analizNotlari = ["✅ Aday sunucumuzda aktif rol almak için başvuruda bulundu."];
 
       const logChannel = interaction.guild.channels.cache.get(YETKILI_LOG_CHANNEL_ID);
