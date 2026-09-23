@@ -27,9 +27,10 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildVoiceStates
+    GatewayIntentBits.GuildVoiceStates,
+    GatewayIntentBits.GuildMembers // GİRİŞ LOGU İÇİN ŞART
   ],
-  partials: [Partials.Channel, Partials.Message]
+  partials: [Partials.Channel, Partials.Message, Partials.GuildMember]
 });
 
 // ======================
@@ -37,9 +38,11 @@ const client = new Client({
 // ======================
 const AC_LOG_CHANNEL_ID = "1546239467033989210";       // AC Başvuru Log Kanalı
 const YETKILI_LOG_CHANNEL_ID = "1546240461822361710"; // Yetkili Log Kanalı
+const WELCOME_CHANNEL_ID = "1542872463870922814";    // Resimli Hoş Geldin Mesajının Düşeceği Kanal ID'si
 
 const ROL_1 = "1542872121833820322";                 // AC için Etiketlenecek 1. Rol
 const ROL_2 = "1542872252045856879";                 // Yetkili için Etiketlenecek Rol
+const UNREGISTERED_ROLE_ID = "1542872121833820322";   // Giriş yapana otomatik verilecek Kayıtsız Rolü ID'si
 
 const TARGET_VOICE_CHANNEL_ID = "1542872463870922814"; // 7/24 Duracağı Ses Kanalı ID'si
 const TARGET_IMAGE = "https://cdn.discordapp.com/attachments/1542872935809814688/1543803508547915786/ChatGPT_Image_31_Agu_2026_05_01_30.png?ex=6a9ec44e&is=6a9d72ce&hm=1a1a3cd5515ea1d43d8d89a44c16ff71702398ef3da14e341032e7c8144ecc37&"; 
@@ -77,57 +80,37 @@ function yetkiliBasvuruAnaliz(ad, yasStr, gecmis, nedenSen) {
   const yas = parseInt(yasStr) || 0;
   const birlesikMetin = `${ad} ${yasStr} ${gecmis} ${nedenSen}`.toLowerCase();
 
-  // 1. KURAL: Küfür Kontrolü
   if (kufurKontrol(birlesikMetin)) {
-    return {
-      puan: 0,
-      durum: "🚨 **KÜFÜR / HAKARET TESPİT EDİLDİ!**",
-      renk: "#FF0000"
-    };
+    return { puan: 0, durum: "🚨 **KÜFÜR / HAKARET TESPİT EDİLDİ!**", renk: "#FF0000" };
   }
 
-  // 2. KURAL: Yaş Kontrolü
   if (yas < 10) {
-    return {
-      puan: 0,
-      durum: "🚨 **YAŞ ÇOK KÜÇÜK (10 Yaş Altı)**",
-      renk: "#FF0000"
-    };
+    return { puan: 0, durum: "🚨 **YAŞ ÇOK KÜÇÜK (10 Yaş Altı)**", renk: "#FF0000" };
   }
 
-  // 3. KURAL: Troll & Ciddiyetsizlik Kontrolü
   const trollVarMi = trollKalipListesi.some(kalip => birlesikMetin.includes(kalip));
   const metinCokKisa = gecmis.trim().length < 5 || nedenSen.trim().length < 5;
 
   if (trollVarMi || metinCokKisa) {
-    return {
-      puan: 10,
-      durum: "⚠️ **Ciddiyetsiz / Troll Başvuru**",
-      renk: "#FEE75C"
-    };
+    return { puan: 10, durum: "⚠️ **Ciddiyetsiz / Troll Başvuru**", renk: "#FEE75C" };
   }
 
-  // 4. KURAL: Puan Hesaplama Algoritması
   let toplamPuan = 0;
 
-  // Yaş Puanı (Max 35 Puan)
   if (yas >= 10 && yas <= 12) toplamPuan += 10;
   else if (yas >= 13 && yas <= 15) toplamPuan += 25;
   else if (yas >= 16) toplamPuan += 35;
 
-  // "Neden Seçmeliyiz" Kalite Puanı (Max 35 Puan)
   const nedenUzunluk = nedenSen.trim().length;
   if (nedenUzunluk > 50) toplamPuan += 35;
   else if (nedenUzunluk > 20) toplamPuan += 25;
   else toplamPuan += 10;
 
-  // Geçmiş Yetkililik Kalite Puanı (Max 30 Puan)
   const gecmisUzunluk = gecmis.trim().length;
   if (gecmisUzunluk > 40) toplamPuan += 30;
   else if (gecmisUzunluk > 15) toplamPuan += 20;
   else toplamPuan += 10;
 
-  // Statü Belirleme
   let durumText = "";
   let renkHex = "#57f287";
 
@@ -145,11 +128,7 @@ function yetkiliBasvuruAnaliz(ad, yasStr, gecmis, nedenSen) {
     renkHex = "#E67E22";
   }
 
-  return {
-    puan: toplamPuan,
-    durum: durumText,
-    renk: renkHex
-  };
+  return { puan: toplamPuan, durum: durumText, renk: renkHex };
 }
 
 async function connectToVoice(guild) {
@@ -180,6 +159,59 @@ async function connectToVoice(guild) {
     console.error('Ses bağlantı hatası:', error);
   }
 }
+
+// ==========================================
+// 🔔 RESİMLİ HOŞ GELDİN & GİRİŞ LOGU SİSTEMİ
+// ==========================================
+client.on('guildMemberAdd', async (member) => {
+  // 1. Kayıtsız Rolü Ver
+  try {
+    if (UNREGISTERED_ROLE_ID) {
+      await member.roles.add(UNREGISTERED_ROLE_ID).catch(() => {});
+    }
+  } catch (e) {
+    console.error("Rol verme hatası:", e);
+  }
+
+  // 2. Hesap Oluşturma Tarihi Formatlama
+  const createdAt = member.user.createdAt;
+  const aylar = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+  const gun = createdAt.getDate();
+  const ay = aylar[createdAt.getMonth()];
+  const yil = createdAt.getFullYear();
+  const saat = String(createdAt.getHours()).padStart(2, '0');
+  const dakika = String(createdAt.getMinutes()).padStart(2, '0');
+  const tarihStr = `${gun} ${ay} ${yil} ${saat}:${dakika}`;
+
+  // 3. Hesap Güvenliği Kontrolü (7 Günden yeni ise şüpheli)
+  const yediGunMs = 7 * 24 * 60 * 60 * 1000;
+  const hesapYasi = Date.now() - member.user.createdTimestamp;
+  const guvenliMi = hesapYasi > yediGunMs;
+  const guvenlikMetni = guvenliMi ? "`Güvenli ✔️`" : "`Şüpheli ❌`";
+
+  // 4. Sunucu Üye Sayısı / Giriş Sırası
+  const uyeSayisi = member.guild.memberCount;
+
+  // 5. Embed Mesajını Oluşturma
+  const welcomeEmbed = new EmbedBuilder()
+    .setColor('#2b2d31')
+    .setThumbnail(member.guild.iconURL({ dynamic: true }) || member.user.displayAvatarURL({ dynamic: true }))
+    .setDescription(
+      `🔔 - **Kullanıcı:** <@${member.user.id}> - \`${member.user.username}\`\n` +
+      `👤 - **Kullanıcı ID:** \`${member.user.id}\`\n` +
+      `📆 - **Hesap oluşturma tarihi:** \`${tarihStr}\`\n` +
+      `⏰ - **Sunucuya giriş sırası:** \`${uyeSayisi}/${uyeSayisi}\`\n` +
+      `📜 - **Hesap güvenliği :** ${guvenlikMetni}\n\n` +
+      `📣 - Merhabalar, sunucumuza hoşgeldiniz! Sunucumuza katıldığın için üzerine **Kayıtsız Üye** rolünü verdim!`
+    )
+    .setImage(TARGET_IMAGE)
+    .setFooter({ text: '#FestPvP - Welcomer System', iconURL: member.guild.iconURL({ dynamic: true }) });
+
+  const channel = member.guild.channels.cache.get(WELCOME_CHANNEL_ID);
+  if (channel) {
+    await channel.send({ content: `<@${member.user.id}>`, embeds: [welcomeEmbed] });
+  }
+});
 
 client.once('ready', async () => {
   console.log(`✅ ${client.user.tag} Sistem Aktif!`);
@@ -276,10 +308,6 @@ client.on('interactionCreate', async (interaction) => {
 
   // FORM GÖNDERİMLERİ VE ANALİZ
   if (interaction.isModalSubmit()) {
-
-    // ==========================================
-    // 🛡️ ANTICHEAT (AC) BAŞVURU DEĞERLENDİRMESİ
-    // ==========================================
     if (interaction.customId === 'modal_ac') {
       if (basvuranlarAC.has(interaction.user.id)) return;
       basvuranlarAC.add(interaction.user.id);
@@ -347,9 +375,6 @@ client.on('interactionCreate', async (interaction) => {
       return await interaction.reply({ content: '✅ AntiCheat başvurunuz iletildi!', ephemeral: true });
     } 
     
-    // ==========================================
-    // 👑 YETKİLİ BAŞVURU DEĞERLENDİRMESİ
-    // ==========================================
     else if (interaction.customId === 'modal_staff') {
       if (basvuranlarStaff.has(interaction.user.id)) return;
       basvuranlarStaff.add(interaction.user.id);
@@ -359,7 +384,6 @@ client.on('interactionCreate', async (interaction) => {
       const gecmis = interaction.fields.getTextInputValue('staff_gecmis');
       const nedenSen = interaction.fields.getTextInputValue('staff_neden');
 
-      // Akıllı Analiz Motoru
       const analiz = yetkiliBasvuruAnaliz(ad, yasStr, gecmis, nedenSen);
 
       const logChannel = interaction.guild.channels.cache.get(YETKILI_LOG_CHANNEL_ID);
