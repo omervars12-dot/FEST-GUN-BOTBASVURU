@@ -45,7 +45,7 @@ const ROL_2 = "1542872252045856879";                 // Yetkili Bildirim Rolü
 const UNREGISTERED_ROLE_ID = "1542872121833820322";   // Otomatik Kayıtsız Rolü ID'si
 
 const TARGET_VOICE_CHANNEL_ID = "1542872463870922814"; // 7/24 Duracağı Ses Kanalı
-const TARGET_IMAGE = "https://cdn.discordapp.com/attachments/1542872935809814688/1543803508547915786/ChatGPT_Image_31_Agu_2026_05_01_30.png?ex=6a9ec44e&is=6a9d72ce&hm=1a1a3cd5515ea1d43d8d89a44c16ff71702398ef3da14e341032e7c8144ecc37&"; 
+const TARGET_IMAGE = https://media.discordapp.net/attachments/1529424223037161533/1556448842910670949/image.png?backend=b2&ex=6ac77f31&is=6ac62db1&hm=3b3deb0cd51c0ce018b51c484f00418dafd4802e1aff446fc5049c7b9ae7bc31&=&format=webp&quality=lossless&width=640&height=361
 
 const basvuranlarAC = new Set();
 const basvuranlarStaff = new Set();
