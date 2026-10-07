@@ -36,16 +36,19 @@ const client = new Client({
 // ======================
 // AYARLAR VE ID'LER
 // ======================
-const AC_LOG_CHANNEL_ID = "1546239467033989210";       // AC Başvuru Log Kanalı
-const YETKILI_LOG_CHANNEL_ID = "1546240461822361710"; // Yetkili Log Kanalı
-const WELCOME_CHANNEL_ID = "1542872463870922814";    // Resimli Hoş Geldin Kanalı
+const AC_LOG_CHANNEL_ID = "1557480518520410265";       // AC Başvuru Log Kanalı
+const YETKILI_LOG_CHANNEL_ID = "1557480613840429089";  // Yetkili Başvuru Log Kanalı
+const WELCOME_CHANNEL_ID = "1542872463870922814";      // Resimli Hoş Geldin Kanalı
 
-const ROL_1 = "1542872121833820322";                 // AC Bildirim Rolü
-const ROL_2 = "1542872252045856879";                 // Yetkili Bildirim Rolü
-const UNREGISTERED_ROLE_ID = "1542872121833820322";   // Otomatik Kayıtsız Rolü ID'si
+const ROL_1 = "1542872121833820322";                   // AC Bildirim Rolü
+const ROL_2 = "1542872252045856879";                   // Yetkili Bildirim Rolü
+const UNREGISTERED_ROLE_ID = "1542872121833820322";    // Otomatik Kayıtsız Rolü ID'si
+
+// /wl komutuyla herkese verilecek roller (sadece kurucu kullanabilir)
+const WL_ROLES = ["1557449981395337236", "1557449979075891282"];
 
 const TARGET_VOICE_CHANNEL_ID = "1542872463870922814"; // 7/24 Duracağı Ses Kanalı
-const TARGET_IMAGE = https://media.discordapp.net/attachments/1529424223037161533/1556448842910670949/image.png?backend=b2&ex=6ac77f31&is=6ac62db1&hm=3b3deb0cd51c0ce018b51c484f00418dafd4802e1aff446fc5049c7b9ae7bc31&=&format=webp&quality=lossless&width=640&height=361
+const TARGET_IMAGE = "https://media.discordapp.net/attachments/1529424223037161533/1556448842910670949/image.png?backend=b2&ex=6ac77f31&is=6ac62db1&hm=3b3deb0cd51c0ce018b51c484f00418dafd4802e1aff446fc5049c7b9ae7bc31&=&format=webp&quality=lossless&width=1536&height=864";
 
 const basvuranlarAC = new Set();
 const basvuranlarStaff = new Set();
@@ -215,7 +218,8 @@ client.once('ready', async () => {
 
   const commands = [
     new SlashCommandBuilder().setName('ac-panel').setDescription('AC başvuru paneli'),
-    new SlashCommandBuilder().setName('yetkili-panel').setDescription('Yetkili başvuru paneli')
+    new SlashCommandBuilder().setName('yetkili-panel').setDescription('Yetkili başvuru paneli'),
+    new SlashCommandBuilder().setName('wl').setDescription('Herkese WL rollerini verir (sadece kurucu)')
   ].map(command => command.toJSON());
 
   const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
@@ -270,6 +274,36 @@ client.on('interactionCreate', async (interaction) => {
 
         await interaction.reply({ content: '✅ Yetkili paneli kuruldu.', ephemeral: true });
         await interaction.channel.send({ embeds: [embed], components: [row] });
+      }
+      else if (interaction.commandName === 'wl') {
+        // Sadece sunucu sahibi (kurucu) kullanabilir
+        if (interaction.user.id !== interaction.guild.ownerId) {
+          return await interaction.reply({ content: '❌ Bu komutu sadece sunucu kurucusu kullanabilir!', ephemeral: true });
+        }
+
+        await interaction.deferReply({ ephemeral: true });
+
+        const members = await interaction.guild.members.fetch();
+        let verilen = 0;
+        let hata = 0;
+
+        for (const member of members.values()) {
+          if (member.user.bot) continue;
+          try {
+            const eksikRoller = WL_ROLES.filter(r => !member.roles.cache.has(r));
+            if (eksikRoller.length > 0) {
+              await member.roles.add(eksikRoller);
+              verilen++;
+              await new Promise(res => setTimeout(res, 300)); // rate limit koruması
+            }
+          } catch (e) {
+            hata++;
+          }
+        }
+
+        return await interaction.editReply({
+          content: `✅ WL tamamlandı!\n👥 Rol verilen: **${verilen}**\n⚠️ Hata: **${hata}**`
+        });
       }
     }
 
@@ -426,7 +460,7 @@ client.on('interactionCreate', async (interaction) => {
 // MESAJ İLE PANEL KURMA
 // ======================
 client.on('messageCreate', async (message) => {
-  if (message.author.bot || !message.member.permissions.has(PermissionFlagsBits.Administrator)) return;
+  if (message.author.bot || !message.member || !message.member.permissions.has(PermissionFlagsBits.Administrator)) return;
 
   if (message.content === '!ac-panel') {
     await message.delete().catch(() => {});
